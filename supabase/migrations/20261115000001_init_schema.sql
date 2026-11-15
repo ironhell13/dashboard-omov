@@ -36,6 +36,8 @@ create table if not exists reports (
   drive_url text
 );
 
+alter table if exists reports add column if not exists teknisi text;
+
 create index if not exists idx_reports_status_tanggal on reports (status, tanggal desc);
 create index if not exists idx_reports_wsid on reports (wsid);
 

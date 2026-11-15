@@ -36,6 +36,9 @@ begin
 end;
 $$ language plpgsql stable security definer;
 
+-- Pastikan kolom teknisi sudah ada jika tabel reports dibuat sebelum revisi
+alter table if exists reports add column if not exists teknisi text;
+
 -- 1. View v_lokasi_lapangan untuk Tim Lapangan
 create or replace view v_lokasi_lapangan as
 select
