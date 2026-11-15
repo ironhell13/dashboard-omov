@@ -186,16 +186,24 @@ grant select on reports to anon, authenticated;
 
 -- 8. Kebijakan RLS: MASTER TABLES
 -- Baca untuk semua pengguna terautentikasi, kelola untuk supervisor
+drop policy if exists "Master vendor: read for authenticated" on master_vendor;
 create policy "Master vendor: read for authenticated" on master_vendor for select using (auth.role() = 'authenticated');
+drop policy if exists "Master vendor: supervisor manage" on master_vendor;
 create policy "Master vendor: supervisor manage" on master_vendor for all using (current_user_role() = 'supervisor');
 
+drop policy if exists "Master mesin: read for authenticated" on master_mesin;
 create policy "Master mesin: read for authenticated" on master_mesin for select using (auth.role() = 'authenticated');
+drop policy if exists "Master mesin: supervisor manage" on master_mesin;
 create policy "Master mesin: supervisor manage" on master_mesin for all using (current_user_role() = 'supervisor');
 
+drop policy if exists "Master orang: read for authenticated" on master_orang;
 create policy "Master orang: read for authenticated" on master_orang for select using (auth.role() = 'authenticated');
+drop policy if exists "Master orang: supervisor manage" on master_orang;
 create policy "Master orang: supervisor manage" on master_orang for all using (current_user_role() = 'supervisor');
 
 -- 9. Kebijakan RLS: ACTIVITY_LOG
+drop policy if exists "Activity log: read for supervisor" on activity_log;
 create policy "Activity log: read for supervisor" on activity_log for select using (current_user_role() = 'supervisor');
+drop policy if exists "Activity log: insert for authenticated" on activity_log;
 create policy "Activity log: insert for authenticated" on activity_log for insert with check (auth.role() = 'authenticated');
 
