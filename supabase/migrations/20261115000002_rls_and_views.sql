@@ -40,6 +40,7 @@ $$ language plpgsql stable security definer;
 alter table if exists reports add column if not exists teknisi text;
 
 -- 1. View v_lokasi_lapangan untuk Tim Lapangan
+drop view if exists v_lokasi_lapangan cascade;
 create or replace view v_lokasi_lapangan as
 select
   r.id,
