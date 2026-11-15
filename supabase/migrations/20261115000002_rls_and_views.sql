@@ -42,6 +42,7 @@ select
   r.id,
   r.wsid,
   r.lokasi,
+  r.teknisi,
   r.jenis_pekerjaan,
   r.tanggal,
   r.status,
@@ -105,22 +106,22 @@ create policy "Reports: supervisor full access"
   on reports for all
   using (current_user_role() = 'supervisor');
 
--- Lapangan: Hanya bisa membaca laporan aktif yang tidak berstatus final/terarsip/dibatalkan
--- Catatan: Lapangan tidak boleh membaca laporan final/terarsip
+-- Lapangan / Publik: Hanya bisa membaca laporan aktif yang tidak berstatus final/terarsip/dibatalkan
+-- Catatan: Tim lapangan tidak perlu login (anon dapat mengakses laporan aktif)
 drop policy if exists "Reports: lapangan read active reports" on reports;
 create policy "Reports: lapangan read active reports"
   on reports for select
   using (
-    current_user_role() = 'lapangan'
+    (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and status in ('menunggu_foto', 'perlu_perbaikan', 'foto_lengkap')
   );
 
 -- 6. Kebijakan RLS: PHOTO_SLOTS
--- Dapat dibaca oleh semua pengguna terautentikasi
+-- Dapat dibaca oleh semua pengguna (termasuk publik tim lapangan)
 drop policy if exists "Photo slots: read for authenticated users" on photo_slots;
 create policy "Photo slots: read for authenticated users"
   on photo_slots for select
-  using (auth.role() = 'authenticated');
+  using (auth.role() in ('authenticated', 'anon'));
 
 -- Supervisor dapat mengubah slot
 drop policy if exists "Photo slots: supervisor manage" on photo_slots;
@@ -135,12 +136,12 @@ create policy "Report photos: supervisor full access"
   on report_photos for all
   using (current_user_role() = 'supervisor');
 
--- Lapangan: SELECT foto hanya untuk laporan aktif (tidak final/terarsip)
+-- Lapangan / Publik: SELECT foto hanya untuk laporan aktif (tidak final/terarsip)
 drop policy if exists "Report photos: lapangan select active" on report_photos;
 create policy "Report photos: lapangan select active"
   on report_photos for select
   using (
-    current_user_role() = 'lapangan'
+    (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and exists (
       select 1 from reports r
       where r.id = report_photos.report_id
@@ -148,12 +149,12 @@ create policy "Report photos: lapangan select active"
     )
   );
 
--- Lapangan: INSERT / UPDATE hanya untuk laporan aktif dan tidak dapat mengubah kolom review
+-- Lapangan / Publik: INSERT / UPDATE hanya untuk laporan aktif dan tidak dapat mengubah kolom review
 drop policy if exists "Report photos: lapangan insert active" on report_photos;
 create policy "Report photos: lapangan insert active"
   on report_photos for insert
   with check (
-    current_user_role() = 'lapangan'
+    (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and exists (
       select 1 from reports r
       where r.id = report_photos.report_id
@@ -165,13 +166,19 @@ drop policy if exists "Report photos: lapangan update active" on report_photos;
 create policy "Report photos: lapangan update active"
   on report_photos for update
   using (
-    current_user_role() = 'lapangan'
+    (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and exists (
       select 1 from reports r
       where r.id = report_photos.report_id
         and r.status in ('menunggu_foto', 'perlu_perbaikan', 'foto_lengkap')
     )
   );
+
+-- Grant privileges to anon and authenticated
+grant select on v_lokasi_lapangan to anon, authenticated;
+grant select on photo_slots to anon, authenticated;
+grant select, insert, update on report_photos to anon, authenticated;
+grant select on reports to anon, authenticated;
 
 -- 8. Kebijakan RLS: MASTER TABLES
 -- Baca untuk semua pengguna terautentikasi, kelola untuk supervisor

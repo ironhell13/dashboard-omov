@@ -32,6 +32,7 @@ let mockReports: Report[] = [
     id: 'rep-01',
     wsid: 'Z9KD',
     lokasi: 'SPBU 3415143 Otista',
+    teknisi: 'Ahmad Fauzi',
     jenis_pekerjaan: 'Trade In',
     tanggal: '2026-11-15',
     status: 'menunggu_foto',
@@ -42,6 +43,7 @@ let mockReports: Report[] = [
     data: {
       wsid: 'Z9KD',
       lokasi: 'SPBU 3415143 Otista',
+      teknisi: 'Ahmad Fauzi',
       alamat: 'Jl. Raya Otista No. 143, Tangerang',
       type_mesin_baru: 'NCR 6625',
       serial_nomor: 'SN-99887722',
@@ -52,14 +54,15 @@ let mockReports: Report[] = [
       reject: '1 Kaset',
       kunci: 'Lengkap di Posisi 1',
       kota: 'Jakarta',
-      yang_melakukan: 'Budi Santoso',
-      mengetahui: 'Ahmad Fauzi',
+      yang_melakukan: 'Ahmad Fauzi',
+      mengetahui: 'Budi Santoso',
     },
   },
   {
     id: 'rep-02',
     wsid: 'B482',
     lokasi: 'KCP Daan Mogot Mall',
+    teknisi: 'Bambang Irawan',
     jenis_pekerjaan: 'Replace',
     tanggal: '2026-11-15',
     status: 'foto_lengkap',
@@ -70,6 +73,7 @@ let mockReports: Report[] = [
     data: {
       wsid: 'B482',
       lokasi: 'KCP Daan Mogot Mall',
+      teknisi: 'Bambang Irawan',
       alamat: 'Mall Daan Mogot Lt. Dasar, Jakarta Barat',
       type_mesin_baru: 'Diebold 5500',
       serial_nomor: 'DB-441122',
@@ -77,36 +81,39 @@ let mockReports: Report[] = [
       grounding_ups_it: 0.8,
       ip_address: '10.30.12.88',
       kota: 'Jakarta',
-      yang_melakukan: 'Budi Santoso',
-      mengetahui: 'Ahmad Fauzi',
+      yang_melakukan: 'Bambang Irawan',
+      mengetahui: 'Budi Santoso',
     },
   },
   {
     id: 'rep-03',
     wsid: 'A199',
     lokasi: 'Indomaret HOS Cokroaminoto',
+    teknisi: 'Eko Prasetyo',
     jenis_pekerjaan: 'Aktivasi Online Baru',
     tanggal: '2026-11-15',
     status: 'perlu_perbaikan',
-    claimed_by: 'user-02',
+    claimed_by: 'user-04',
     claimed_at: '2026-11-15T04:00:00Z',
     created_at: '2026-11-15T03:00:00Z',
     updated_at: '2026-11-15T04:45:00Z',
     data: {
       wsid: 'A199',
       lokasi: 'Indomaret HOS Cokroaminoto',
+      teknisi: 'Eko Prasetyo',
       alamat: 'Jl. HOS Cokroaminoto No. 89, Larangan, Tangerang',
       type_mesin_baru: 'NCR 6632',
       serial_nomor: 'NC-772211',
       kota: 'Jakarta',
-      yang_melakukan: 'Budi Santoso',
-      mengetahui: 'Ahmad Fauzi',
+      yang_melakukan: 'Eko Prasetyo',
+      mengetahui: 'Budi Santoso',
     },
   },
   {
     id: 'rep-04',
     wsid: 'K881',
     lokasi: 'Alfamart Ciledug Raya',
+    teknisi: 'Ahmad Fauzi',
     jenis_pekerjaan: 'Relokasi',
     tanggal: '2026-11-14',
     status: 'final',
@@ -116,12 +123,13 @@ let mockReports: Report[] = [
     data: {
       wsid: 'K881',
       lokasi: 'Alfamart Ciledug Raya',
+      teknisi: 'Ahmad Fauzi',
       alamat: 'Jl. Ciledug Raya No. 12, Tangerang',
       type_mesin_baru: 'Hyosung Monimax 5600',
       serial_nomor: 'HY-123456',
       kota: 'Jakarta',
-      yang_melakukan: 'Budi Santoso',
-      mengetahui: 'Ahmad Fauzi',
+      yang_melakukan: 'Ahmad Fauzi',
+      mengetahui: 'Budi Santoso',
     },
   },
 ];
@@ -161,16 +169,20 @@ export const db = {
   getReports: () => [...mockReports],
   getReportById: (id: string) => mockReports.find(r => r.id === id),
   createReport: (report: Partial<Report>): Report => {
+    const teknisiName = (report.teknisi || report.data?.teknisi || 'Tim Lapangan OMOV').trim();
     const newReport: Report = {
       id: `rep-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
       wsid: (report.wsid || '').toUpperCase().trim(),
       lokasi: (report.lokasi || '').trim(),
+      teknisi: teknisiName,
       jenis_pekerjaan: report.jenis_pekerjaan || 'Trade In',
       tanggal: report.tanggal || new Date().toISOString().split('T')[0],
       status: 'menunggu_foto',
       data: {
         wsid: (report.wsid || '').toUpperCase().trim(),
         lokasi: (report.lokasi || '').trim(),
+        teknisi: teknisiName,
+        yang_melakukan: teknisiName,
         alamat: report.data?.alamat || '',
         ...report.data,
       },
@@ -184,6 +196,8 @@ export const db = {
     const rep = mockReports.find(r => r.id === id);
     if (!rep) return null;
     rep.data = { ...rep.data, ...data };
+    if (data.teknisi) rep.teknisi = data.teknisi;
+    if (data.yang_melakukan && !rep.teknisi) rep.teknisi = data.yang_melakukan;
     rep.updated_at = new Date().toISOString();
     if (status) rep.status = status as any;
     return rep;

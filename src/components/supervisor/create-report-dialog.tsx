@@ -17,6 +17,7 @@ export function CreateReportDialog({
 }: CreateReportDialogProps) {
   const [wsid, setWsid] = useState('');
   const [lokasi, setLokasi] = useState('');
+  const [teknisi, setTeknisi] = useState('');
   const [jenisPekerjaan, setJenisPekerjaan] = useState<JenisPekerjaan>('Trade In');
   const [tanggal, setTanggal] = useState(
     new Date().toISOString().split('T')[0]
@@ -31,8 +32,8 @@ export function CreateReportDialog({
     e.preventDefault();
     setErrorMessage('');
 
-    if (!wsid.trim() || !lokasi.trim()) {
-      setErrorMessage('WSID dan Lokasi wajib diisi');
+    if (!wsid.trim() || !lokasi.trim() || !teknisi.trim()) {
+      setErrorMessage('WSID, Lokasi, dan Nama Teknisi wajib diisi');
       return;
     }
 
@@ -44,6 +45,7 @@ export function CreateReportDialog({
         body: JSON.stringify({
           wsid: wsid.toUpperCase().trim(),
           lokasi: lokasi.trim(),
+          teknisi: teknisi.trim(),
           jenis_pekerjaan: jenisPekerjaan,
           tanggal,
           alamat: alamat.trim(),
@@ -60,6 +62,7 @@ export function CreateReportDialog({
       // Reset form
       setWsid('');
       setLokasi('');
+      setTeknisi('');
       setAlamat('');
     } catch (err: any) {
       setErrorMessage(err.message || 'Terjadi kesalahan saat menyimpan laporan');
@@ -143,6 +146,21 @@ export function CreateReportDialog({
               value={lokasi}
               onChange={(e) => setLokasi(e.target.value)}
               placeholder="Contoh: SPBU 3415143 Otista"
+              className="form-input"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text mb-1.5" htmlFor="teknisi">
+              Nama Teknisi (Tim Lapangan) <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="teknisi"
+              type="text"
+              required
+              value={teknisi}
+              onChange={(e) => setTeknisi(e.target.value)}
+              placeholder="Contoh: Ahmad Fauzi / Tim OMOV A"
               className="form-input"
             />
           </div>

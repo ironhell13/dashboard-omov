@@ -7,17 +7,13 @@ import {
   MapPin, 
   UserCheck, 
   RefreshCw,
-  HardHat
+  ChevronRight
 } from 'lucide-react';
-import { getStatusBadgeConfig, formatTanggalIndonesia } from '@/lib/utils';
 import { Report } from '@/types/database';
-
-type FilterType = 'semua' | 'belum_mulai' | 'sedang_dikerjakan' | 'perlu_perbaikan';
 
 export default function LapanganPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<FilterType>('semua');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchReports = async () => {
@@ -40,18 +36,13 @@ export default function LapanganPage() {
   }, []);
 
   const filteredLokasi = reports.filter((item) => {
-    const matchesSearch =
-      item.wsid.toLowerCase().includes(search.toLowerCase()) ||
-      item.lokasi.toLowerCase().includes(search.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    // Filter status
-    const progres = item.status === 'foto_lengkap' || item.status === 'final' ? 34 : (item.claimed_by ? 14 : 0);
-    if (filter === 'belum_mulai') return !item.claimed_by && progres === 0;
-    if (filter === 'sedang_dikerjakan') return !!item.claimed_by && progres < 34;
-    if (filter === 'perlu_perbaikan') return item.status === 'perlu_perbaikan';
-    return true;
+    const q = search.toLowerCase();
+    const teknisi = (item.teknisi || item.data?.teknisi || item.data?.yang_melakukan || '').toLowerCase();
+    return (
+      item.wsid.toLowerCase().includes(q) ||
+      item.lokasi.toLowerCase().includes(q) ||
+      teknisi.includes(q)
+    );
   });
 
   return (
@@ -64,7 +55,7 @@ export default function LapanganPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari WSID atau Lokasi..."
+            placeholder="Cari WSID, Lokasi, atau Teknisi..."
             className="form-input pl-10 h-11 text-sm bg-white"
           />
         </div>
@@ -78,100 +69,36 @@ export default function LapanganPage() {
         </button>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-        <button
-          onClick={() => setFilter('semua')}
-          className={`px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors min-h-[36px] flex items-center ${
-            filter === 'semua'
-              ? 'bg-primary text-white'
-              : 'bg-white border border-border text-text-muted'
-          }`}
-        >
-          Semua ({reports.length})
-        </button>
-        <button
-          onClick={() => setFilter('sedang_dikerjakan')}
-          className={`px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors min-h-[36px] flex items-center ${
-            filter === 'sedang_dikerjakan'
-              ? 'bg-primary text-white'
-              : 'bg-white border border-border text-text-muted'
-          }`}
-        >
-          Sedang Dikerjakan
-        </button>
-        <button
-          onClick={() => setFilter('perlu_perbaikan')}
-          className={`px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors min-h-[36px] flex items-center ${
-            filter === 'perlu_perbaikan'
-              ? 'bg-[#FFF3DC] text-[#8A5300] border border-[#B9D4F3]'
-              : 'bg-white border border-border text-text-muted'
-          }`}
-        >
-          Perlu Perbaikan
-        </button>
-      </div>
-
-      {/* Location Cards */}
+      {/* Location Cards - Hanya WSID, Lokasi, Teknisi */}
       <div className="space-y-3">
         {filteredLokasi.map((item) => {
-          const badge = getStatusBadgeConfig(item.status);
-          const terisi = item.status === 'foto_lengkap' || item.status === 'final' ? 34 : (item.claimed_by ? 14 : 0);
-          const total = 34;
-          const percent = Math.round((terisi / total) * 100);
+          const teknisiNama = item.teknisi || item.data?.teknisi || item.data?.yang_melakukan || 'Tim Lapangan OMOV';
 
           return (
             <Link
               key={item.id}
               href={`/lapangan/${item.id}`}
-              className="block app-card p-4 hover:border-primary-hover transition-all active:scale-[0.99] bg-white select-none"
+              className="block app-card p-4 hover:border-primary transition-all active:scale-[0.99] bg-white border border-border shadow-xs"
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-text tracking-tight">
-                      {item.wsid}
-                    </span>
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-bg-tint text-primary font-medium">
-                      {item.jenis_pekerjaan}
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-text mt-0.5 leading-snug">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="text-xl font-bold text-text tracking-tight block">
+                    {item.wsid}
+                  </span>
+                  <h3 className="text-sm font-semibold text-text mt-1 leading-snug truncate">
                     {item.lokasi}
                   </h3>
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+                    <UserCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="font-medium text-text truncate">
+                      Teknisi: {teknisiNama}
+                    </span>
+                  </div>
                 </div>
-                <span className={`status-chip shrink-0 ${badge.className}`}>
-                  {badge.label}
-                </span>
-              </div>
 
-              {/* Progress bar */}
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-text-muted font-medium">Progres Foto</span>
-                  <span className="font-semibold text-text">
-                    {terisi} / {total} <span className="text-text-muted font-normal">({percent}%)</span>
-                  </span>
+                <div className="w-9 h-9 rounded-full bg-bg-subtle border border-border flex items-center justify-center shrink-0 text-text-muted">
+                  <ChevronRight className="w-5 h-5 text-primary" />
                 </div>
-                <div className="w-full bg-bg-tint rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-primary h-full rounded-full transition-all duration-300"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Worker marker */}
-              <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between text-xs text-text-muted">
-                <div className="flex items-center gap-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-primary stroke-[1.75]" />
-                  <span>
-                    {item.claimed_by
-                      ? 'Sedang dikerjakan oleh Ahmad Fauzi'
-                      : 'Belum ada yang mengerjakan'}
-                  </span>
-                </div>
-                <span className="text-[11px]">{formatTanggalIndonesia(item.tanggal)}</span>
               </div>
             </Link>
           );

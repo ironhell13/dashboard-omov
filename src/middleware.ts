@@ -4,11 +4,12 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Lewati static assets dan API
+  // Lewati static assets, file dokumen, manifest, dan API
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/favicon.ico') ||
+    pathname.endsWith('.webmanifest') ||
     pathname.includes('.')
   ) {
     return NextResponse.next();
@@ -29,24 +30,29 @@ export function middleware(request: NextRequest) {
 
   const role = request.cookies.get('omov_role')?.value;
 
-  // Jika belum login dan mencoba mengakses rute yang dilindungi
-  if (!role && pathname !== '/login') {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Jika sudah login dan membuka halaman /login, redirect ke dashboard yang sesuai
-  if (role && pathname === '/login') {
-    if (role === 'supervisor') {
-      return NextResponse.redirect(new URL('/supervisor', request.url));
-    } else {
-      return NextResponse.redirect(new URL('/lapangan', request.url));
-    }
-  }
-
-  // Supervisor tidak boleh dibobol peran lapangan (A.13)
-  if (pathname.startsWith('/supervisor') && role !== 'supervisor') {
+  // Halaman Root (/) langsung diarahkan ke Dashboard Lapangan (tanpa perlu login)
+  if (pathname === '/') {
     return NextResponse.redirect(new URL('/lapangan', request.url));
+  }
+
+  // Rute Tim Lapangan (/lapangan/*) bebas diakses publik tanpa perlu login
+  if (pathname.startsWith('/lapangan')) {
+    return NextResponse.next();
+  }
+
+  // Rute Supervisor (/supervisor/*) mewajibkan login role supervisor
+  if (pathname.startsWith('/supervisor')) {
+    if (role !== 'supervisor') {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // Jika sudah login sebagai supervisor dan membuka /login, arahkan ke /supervisor
+  if (pathname === '/login' && role === 'supervisor') {
+    return NextResponse.redirect(new URL('/supervisor', request.url));
   }
 
   return NextResponse.next();

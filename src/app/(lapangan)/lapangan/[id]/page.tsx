@@ -105,8 +105,8 @@ export default function LapanganDetailPage({
 
   return (
     <div className="space-y-4">
-      {/* Top Header */}
-      <div className="flex items-start justify-between gap-3 bg-white p-4 rounded-card border border-border">
+      {/* Top Header - WSID, Lokasi, Teknisi */}
+      <div className="bg-white p-4 rounded-card border border-border space-y-3">
         <div className="flex items-start gap-2.5">
           <Link
             href="/lapangan"
@@ -115,50 +115,28 @@ export default function LapanganDetailPage({
           >
             <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight text-text">
-                {report.wsid}
-              </span>
-              <span className={`status-chip ${badge.className}`}>
-                {badge.label}
-              </span>
-            </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xl font-bold tracking-tight text-text block">
+              {report.wsid}
+            </span>
             <h1 className="text-sm font-semibold text-text mt-0.5 leading-snug">
               {report.lokasi}
             </h1>
-            <p className="text-[11px] text-text-muted mt-0.5">
-              {report.jenis_pekerjaan} &middot; {report.data?.alamat || 'Alamat belum diisi'}
-            </p>
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+              <UserCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="font-semibold text-text">
+                Teknisi: {report.teknisi || report.data?.teknisi || report.data?.yang_melakukan || 'Tim Lapangan OMOV'}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Claim / Release Banner */}
-      <div className="flex items-center justify-between p-3 bg-white rounded-card border border-border text-xs">
-        <div className="flex items-center gap-2">
-          <UserCheck className="w-4 h-4 text-primary" />
-          <span className="text-text font-medium">
-            {claimed ? 'Sedang Anda kerjakan' : 'Belum ada teknisi'}
-          </span>
-        </div>
-        <button
-          onClick={handleToggleClaim}
-          className={`px-3 py-1.5 rounded-btn text-xs font-semibold transition-colors ${
-            claimed
-              ? 'bg-bg-subtle text-text-muted border border-border hover:text-text'
-              : 'btn-primary h-8 px-3'
-          }`}
-        >
-          {claimed ? 'Lepas Lokasi' : 'Ambil Alih Lokasi'}
-        </button>
       </div>
 
       {/* Progress Bar & Batch Import */}
       <div className="app-card p-4 bg-white space-y-3">
         <div className="flex items-center justify-between text-xs font-semibold">
-          <span className="text-text">Progres Pengunggahan Foto</span>
-          <span className="text-primary">
+          <span className="text-text">Foto yang Harus Diunggah</span>
+          <span className="text-primary font-bold">
             {terisiCount} / {totalSlots} Slot ({percent}%)
           </span>
         </div>
@@ -169,7 +147,7 @@ export default function LapanganDetailPage({
           />
         </div>
 
-        {/* Batch Gallery Import Button (SPEC A.14) */}
+        {/* Batch Gallery Import Button */}
         <div className="pt-2 border-t border-border flex items-center justify-between">
           <input
             type="file"
@@ -180,7 +158,7 @@ export default function LapanganDetailPage({
             onChange={handleBatchFileSelect}
           />
           <span className="text-[11px] text-text-muted">
-            Punya banyak foto di galeri?
+            Punya banyak foto di galeri HP?
           </span>
           <button
             type="button"
@@ -188,7 +166,7 @@ export default function LapanganDetailPage({
             className="btn-secondary h-8 px-3 text-xs font-semibold gap-1.5"
           >
             <UploadCloud className="w-3.5 h-3.5 text-primary" />
-            <span>Impor Banyak Foto</span>
+            <span>Impor Banyak Sekaligus</span>
           </button>
         </div>
       </div>

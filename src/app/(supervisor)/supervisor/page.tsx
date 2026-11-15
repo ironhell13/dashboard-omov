@@ -310,7 +310,7 @@ export default function SupervisorDashboardPage() {
                 <th className="px-4 py-3">Jenis Pekerjaan</th>
                 <th className="px-4 py-3">Tanggal</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Teknisi</th>
+                <th className="px-4 py-3">Teknisi (Tim Lapangan)</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
@@ -349,8 +349,8 @@ export default function SupervisorDashboardPage() {
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-text-muted">
-                        {report.data?.yang_melakukan || (report.claimed_by ? 'Teknisi OMOV' : '-')}
+                      <td className="px-4 py-3.5 font-medium text-text">
+                        {report.teknisi || report.data?.teknisi || report.data?.yang_melakukan || '-'}
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <Link

@@ -165,7 +165,7 @@ export default function SupervisorLaporanPage() {
                 <th className="px-5 py-3.5">Tanggal</th>
                 <th className="px-5 py-3.5">Progres Foto</th>
                 <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Dikerjakan Oleh</th>
+                <th className="px-5 py-3.5">Teknisi (Tim Lapangan)</th>
                 <th className="px-5 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
@@ -207,8 +207,8 @@ export default function SupervisorLaporanPage() {
                         {badge.label}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-xs text-text-muted">
-                      {rep.claimed_by ? 'Ahmad Fauzi' : '-'}
+                    <td className="px-5 py-4 text-xs font-medium text-text">
+                      {rep.teknisi || rep.data?.teknisi || rep.data?.yang_melakukan || '-'}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <Link

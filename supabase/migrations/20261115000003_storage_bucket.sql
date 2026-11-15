@@ -24,13 +24,13 @@ create policy "Storage: supervisor full access"
     and current_user_role() = 'supervisor'
   );
 
--- 3. Kebijakan Storage: Lapangan SELECT (hanya laporan aktif)
+-- 3. Kebijakan Storage: Lapangan / Anon SELECT (hanya laporan aktif)
 drop policy if exists "Storage: lapangan select active" on storage.objects;
 create policy "Storage: lapangan select active"
   on storage.objects for select
   using (
     bucket_id = 'laporan-foto'
-    and current_user_role() = 'lapangan'
+    and (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and exists (
       select 1 from reports r
       where r.id::text = (storage.foldername(name))[1]
@@ -38,13 +38,13 @@ create policy "Storage: lapangan select active"
     )
   );
 
--- 4. Kebijakan Storage: Lapangan INSERT (hanya laporan aktif)
+-- 4. Kebijakan Storage: Lapangan / Anon INSERT (hanya laporan aktif)
 drop policy if exists "Storage: lapangan insert active" on storage.objects;
 create policy "Storage: lapangan insert active"
   on storage.objects for insert
   with check (
     bucket_id = 'laporan-foto'
-    and current_user_role() = 'lapangan'
+    and (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and exists (
       select 1 from reports r
       where r.id::text = (storage.foldername(name))[1]
@@ -52,13 +52,13 @@ create policy "Storage: lapangan insert active"
     )
   );
 
--- 5. Kebijakan Storage: Lapangan UPDATE (hanya laporan aktif)
+-- 5. Kebijakan Storage: Lapangan / Anon UPDATE (hanya laporan aktif)
 drop policy if exists "Storage: lapangan update active" on storage.objects;
 create policy "Storage: lapangan update active"
   on storage.objects for update
   using (
     bucket_id = 'laporan-foto'
-    and current_user_role() = 'lapangan'
+    and (current_user_role() = 'lapangan' or auth.role() = 'anon')
     and exists (
       select 1 from reports r
       where r.id::text = (storage.foldername(name))[1]

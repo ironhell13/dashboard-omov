@@ -39,7 +39,7 @@ export function generateReportsCsv(reports: Report[]): string {
       escapeCsv(r.lokasi || '-'),
       escapeCsv(r.jenis_pekerjaan || '-'),
       escapeCsv(r.status || '-'),
-      escapeCsv(data.yang_melakukan || r.claimed_by || '-'),
+      escapeCsv(r.teknisi || data.teknisi || data.yang_melakukan || r.claimed_by || '-'),
       escapeCsv(data.type_mesin_baru || '-'),
       escapeCsv(data.serial_nomor || '-'),
       escapeCsv(data.type_mesin_lama || '-'),

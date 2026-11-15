@@ -133,29 +133,18 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Fast Access Buttons */}
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs font-medium text-text-muted text-center mb-3">
-            Akses Cepat Pengujian Peran
+        <div className="mt-6 pt-5 border-t border-border">
+          <p className="text-xs font-medium text-text-muted text-center mb-2.5">
+            Khusus Tim Lapangan (Tanpa Login)
           </p>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('supervisor')}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-btn text-xs font-medium border border-border-strong text-primary hover:bg-bg-subtle transition-colors"
-            >
-              <ShieldCheck className="w-4 h-4 stroke-[1.75]" />
-              <span>Supervisor</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('lapangan')}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-btn text-xs font-medium border border-border-strong text-text-muted hover:text-text hover:bg-bg-subtle transition-colors"
-            >
-              <HardHat className="w-4 h-4 stroke-[1.75]" />
-              <span>Tim Lapangan</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/lapangan')}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn text-xs font-semibold bg-bg-tint text-primary hover:bg-[#DCEBFF] border border-[#B9D4F3] transition-colors"
+          >
+            <HardHat className="w-4 h-4 stroke-[1.75]" />
+            <span>Buka Dashboard Tim Lapangan Langsung</span>
+          </button>
         </div>
       </div>
 

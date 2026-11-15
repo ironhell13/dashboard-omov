@@ -26,6 +26,7 @@ export interface ReportData {
   // Identitas
   lokasi?: string;
   wsid?: string;
+  teknisi?: string;
   alamat?: string;
   lokasi_lama?: string;
   wsid_lama?: string;
@@ -113,6 +114,7 @@ export interface Report {
   id: string;
   wsid: string;
   lokasi: string;
+  teknisi?: string;
   jenis_pekerjaan: JenisPekerjaan;
   tanggal: string;
   status: ReportStatus;
@@ -150,6 +152,7 @@ export interface LokasiLapanganView {
   id: string;
   wsid: string;
   lokasi: string;
+  teknisi?: string;
   jenis_pekerjaan: JenisPekerjaan;
   tanggal: string;
   status: ReportStatus;

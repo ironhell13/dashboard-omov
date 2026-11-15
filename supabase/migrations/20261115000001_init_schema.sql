@@ -18,6 +18,7 @@ create table if not exists reports (
   id uuid primary key default gen_random_uuid(),
   wsid text not null,
   lokasi text not null,
+  teknisi text,
   jenis_pekerjaan text not null default 'Trade In'
     check (jenis_pekerjaan in ('Trade In', 'Replace', 'Aktivasi Online Baru', 'Relokasi')),
   tanggal date not null default current_date,

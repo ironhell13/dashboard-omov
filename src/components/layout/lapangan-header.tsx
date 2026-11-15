@@ -1,16 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { FileCheck2, Wifi, WifiOff, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { FileCheck2, Wifi, WifiOff, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface LapanganHeaderProps {
-  userName?: string;
-}
-
-export function LapanganHeader({ userName = 'Tim Lapangan' }: LapanganHeaderProps) {
-  const router = useRouter();
+export function LapanganHeader({ userName }: { userName?: string } = {}) {
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
@@ -27,13 +22,6 @@ export function LapanganHeader({ userName = 'Tim Lapangan' }: LapanganHeaderProp
     };
   }, []);
 
-  const handleLogout = () => {
-    document.cookie = 'omov_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'omov_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    router.push('/login');
-    router.refresh();
-  };
-
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-white border-b border-border select-none">
       <div className="flex items-center gap-2">
@@ -45,7 +33,7 @@ export function LapanganHeader({ userName = 'Tim Lapangan' }: LapanganHeaderProp
             OMOV
           </span>
           <span className="text-[10px] text-text-muted font-normal block leading-none">
-            {userName}
+            Tim Lapangan
           </span>
         </div>
       </div>
@@ -73,14 +61,15 @@ export function LapanganHeader({ userName = 'Tim Lapangan' }: LapanganHeaderProp
           )}
         </div>
 
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="p-2 text-text-muted hover:text-status-danger-text rounded-btn active:bg-bg-subtle transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Keluar"
+        {/* Link Portal Supervisor */}
+        <Link
+          href="/supervisor"
+          className="p-2 text-text-muted hover:text-primary rounded-btn active:bg-bg-subtle transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          title="Masuk sebagai Supervisor"
+          aria-label="Portal Supervisor"
         >
-          <LogOut className="w-4 h-4 stroke-[1.75]" />
-        </button>
+          <ShieldCheck className="w-4 h-4 stroke-[1.75]" />
+        </Link>
       </div>
     </header>
   );

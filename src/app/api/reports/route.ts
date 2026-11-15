@@ -5,6 +5,7 @@ import { z } from 'zod';
 const createReportSchema = z.object({
   wsid: z.string().min(1, 'WSID wajib diisi'),
   lokasi: z.string().min(1, 'Lokasi wajib diisi'),
+  teknisi: z.string().optional(),
   jenis_pekerjaan: z.enum(['Trade In', 'Replace', 'Aktivasi Online Baru', 'Relokasi']),
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   alamat: z.string().optional(),
@@ -48,10 +49,13 @@ export async function POST(request: Request) {
     const newReport = db.createReport({
       wsid: validated.wsid,
       lokasi: validated.lokasi,
+      teknisi: validated.teknisi,
       jenis_pekerjaan: validated.jenis_pekerjaan,
       tanggal: validated.tanggal,
       data: {
         alamat: validated.alamat,
+        teknisi: validated.teknisi,
+        yang_melakukan: validated.teknisi,
       },
     });
 

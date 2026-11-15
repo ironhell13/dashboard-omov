@@ -382,6 +382,19 @@ export default function SupervisorDetailPage({
                     />
                   </div>
                   <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-text mb-1">Nama Teknisi (Tim Lapangan)</label>
+                    <input
+                      type="text"
+                      value={formData.teknisi || report.teknisi || ''}
+                      onChange={(e) => {
+                        handleFieldChange('teknisi', e.target.value);
+                        handleFieldChange('yang_melakukan', e.target.value);
+                      }}
+                      placeholder="Contoh: Ahmad Fauzi / Tim OMOV"
+                      className="form-input font-medium"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-text mb-1">Alamat Penempatan</label>
                     <input
                       type="text"
@@ -697,11 +710,14 @@ export default function SupervisorDetailPage({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Yang Melakukan (Teknisi/Vendor)</label>
+                    <label className="block text-xs font-semibold text-text mb-1">Yang Melakukan (Teknisi Tim Lapangan)</label>
                     <input
                       type="text"
-                      value={formData.yang_melakukan || 'Budi Santoso'}
-                      onChange={(e) => handleFieldChange('yang_melakukan', e.target.value)}
+                      value={formData.yang_melakukan || formData.teknisi || report.teknisi || ''}
+                      onChange={(e) => {
+                        handleFieldChange('yang_melakukan', e.target.value);
+                        handleFieldChange('teknisi', e.target.value);
+                      }}
                       className="form-input"
                     />
                   </div>
