@@ -1,0 +1,290 @@
+{
+  "text_placeholders": [
+    "wsid",
+    "lokasi",
+    "alamat",
+    "wsid_lama",
+    "lokasi_lama",
+    "type_mesin_baru",
+    "serial_nomor",
+    "jenis_pekerjaan",
+    "jenis_pekerjaan_upper",
+    "tegangan_ups_it",
+    "grounding_ups_it",
+    "initial_vsat",
+    "konfigurasi",
+    "ip_address",
+    "cartridge",
+    "reject",
+    "kunci",
+    "cencon",
+    "kamera",
+    "perekam",
+    "pin_cover",
+    "fdi",
+    "ac",
+    "neon_sign",
+    "stiker_mesin",
+    "kabel_jalur",
+    "colokan_listrik",
+    "perekam_eksternal_merk",
+    "perekam_eksternal_sn",
+    "kamera_eksternal_merk",
+    "kamera_eksternal_sn",
+    "ups_merk",
+    "ups_sn",
+    "led_merk",
+    "led_sn",
+    "letak_mesin",
+    "tanggal_email_permintaan",
+    "koordinat_text",
+    "kota",
+    "tanggal_teks",
+    "yang_melakukan",
+    "mengetahui",
+    "type_mesin_lama",
+    "sn_mesin_lama",
+    "keterangan_vendor",
+    "penandatangan_vendor"
+  ],
+  "photo_placeholders": [
+    {
+      "key": "grounding_pln",
+      "tag": "{%foto_grounding_pln}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "voltage_pln",
+      "tag": "{%foto_voltage_pln}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "grounding_ups",
+      "tag": "{%foto_grounding_ups}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "voltage_ups",
+      "tag": "{%foto_voltage_ups}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "tampak_mesin",
+      "tag": "{%foto_tampak_mesin}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "perangkat_pendukung",
+      "tag": "{%foto_perangkat_pendukung}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "sudut_kamera",
+      "tag": "{%foto_sudut_kamera}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "jalur_kabel",
+      "tag": "{%foto_jalur_kabel}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "stop_kontak",
+      "tag": "{%foto_stop_kontak}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "mcb",
+      "tag": "{%foto_mcb}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "sn_mesin",
+      "tag": "{%foto_sn_mesin}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "sn_kamera",
+      "tag": "{%foto_sn_kamera}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "sn_dvr",
+      "tag": "{%foto_sn_dvr}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "sn_ups",
+      "tag": "{%foto_sn_ups}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "dynabolt",
+      "tag": "{%foto_dynabolt}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "kaset_cadangan",
+      "tag": "{%foto_kaset_cadangan}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "cencon",
+      "tag": "{%foto_cencon}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "neon_box",
+      "tag": "{%foto_neon_box}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "led_sticker",
+      "tag": "{%foto_led_sticker}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "sn_led",
+      "tag": "{%foto_sn_led}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "hdd_sebelum",
+      "tag": "{%foto_hdd_sebelum}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "hdd_setelah",
+      "tag": "{%foto_hdd_setelah}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "4:3"
+    },
+    {
+      "key": "ba_hdd",
+      "tag": "{%foto_ba_hdd}",
+      "width_cm": 4.5,
+      "height_cm": 3.4,
+      "aspect": "7:10 (mode pas)"
+    },
+    {
+      "key": "v_mesin_online",
+      "tag": "{%foto_v_mesin_online}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_instalasi",
+      "tag": "{%foto_v_instalasi}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_mover",
+      "tag": "{%foto_v_mover}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_cctv",
+      "tag": "{%foto_v_cctv}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_mesin",
+      "tag": "{%foto_v_mesin}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_pkt1",
+      "tag": "{%foto_v_pkt1}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_pkt2",
+      "tag": "{%foto_v_pkt2}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "v_nb",
+      "tag": "{%foto_v_nb}",
+      "width_cm": 4.7,
+      "height_cm": 5.7,
+      "aspect": "5:6"
+    },
+    {
+      "key": "dyn_sebelum",
+      "tag": "{%foto_dyn_sebelum}",
+      "width_cm": 5.2,
+      "height_cm": 6.5,
+      "aspect": "4:5"
+    },
+    {
+      "key": "dyn_sesudah",
+      "tag": "{%foto_dyn_sesudah}",
+      "width_cm": 5.2,
+      "height_cm": 6.5,
+      "aspect": "4:5"
+    },
+    {
+      "key": "ba_hdd_full",
+      "tag": "{%foto_ba_hdd_full}",
+      "width_cm": 13.2,
+      "height_cm": 18.6,
+      "aspect": "7:10"
+    }
+  ]
+}
