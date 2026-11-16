@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { 
   ArrowLeft, 
   Camera, 
@@ -20,7 +21,8 @@ import {
   Eye,
   Sliders,
   Sparkles,
-  UploadCloud
+  UploadCloud,
+  Lock
 } from 'lucide-react';
 import { PHOTO_SLOTS, PhotoSlot } from '@/types/slot';
 import { 
@@ -67,6 +69,7 @@ export default function PhotoStudioPage({
   const [estimatedKb, setEstimatedKb] = useState<number | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | undefined>();
   const [qualityWarning, setQualityWarning] = useState<ImageQualityMetrics | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -94,6 +97,10 @@ export default function PhotoStudioPage({
             wsid: json.data.wsid,
             lokasi: json.data.lokasi,
           });
+          if (json.data.status === 'final' || json.data.status === 'terarsip') {
+            setIsLocked(true);
+            setViewfinderActive(false);
+          }
         }
       });
 
@@ -366,6 +373,29 @@ export default function PhotoStudioPage({
 
   if (!slot) {
     return <div className="p-4 text-center">Slot tidak valid.</div>;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white text-text flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+          <Lock className="w-7 h-7" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-text">Laporan Berstatus FINAL & Dikunci</h2>
+          <p className="text-xs text-text-muted mt-1 max-w-xs mx-auto">
+            Laporan untuk WSID <strong>{reportInfo.wsid || 'ini'}</strong> telah difinalisasi oleh Supervisor. Penambahan atau perubahan foto dinonaktifkan.
+          </p>
+        </div>
+        <Link
+          href={`/lapangan/${reportId}`}
+          className="btn-primary h-10 px-5 text-xs font-semibold gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Kembali ke Detail Lokasi</span>
+        </Link>
+      </div>
+    );
   }
 
   return (

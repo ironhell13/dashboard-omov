@@ -20,7 +20,8 @@ import {
   Edit3,
   Save,
   X,
-  Eye
+  Eye,
+  Lock
 } from 'lucide-react';
 import { PHOTO_SLOTS, GROUPS, PhotoSlot } from '@/types/slot';
 import { getStatusBadgeConfig } from '@/lib/utils';
@@ -110,6 +111,10 @@ export default function LapanganDetailPage({
 
   const handleSaveFieldData = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      alert('Laporan ini telah berstatus FINAL dan dikunci oleh Supervisor. Data tidak dapat diubah.');
+      return;
+    }
     setIsSavingFieldData(true);
     setSaveSuccessMsg('');
     try {
@@ -179,6 +184,7 @@ export default function LapanganDetailPage({
   const terisiCount = uploadedSlots.size + (uploadedSlots.has('ba_hdd') ? 1 : 0);
   const totalSlots = 34;
   const percent = Math.round((terisiCount / totalSlots) * 100);
+  const isLocked = report.status === 'final' || report.status === 'terarsip';
 
   return (
     <div className="space-y-4">
@@ -209,12 +215,35 @@ export default function LapanganDetailPage({
         </div>
       </div>
 
+      {/* Locked Notification Banner */}
+      {isLocked && (
+        <div className="bg-amber-50 border border-amber-200 rounded-card p-3.5 flex items-start gap-3 text-amber-900 shadow-xs">
+          <Lock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold flex items-center gap-2">
+              <span>Laporan Berstatus FINAL & Dikunci</span>
+              <span className="bg-amber-200/80 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                {report.status}
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+              Laporan ini telah disetujui dan difinalisasi oleh Supervisor. Penambahan foto dan pengubahan data teknis dinonaktifkan.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Quick Field Technical Data Card */}
       <div className="bg-white p-3.5 rounded-card border border-border flex items-center justify-between gap-3 shadow-xs">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs font-bold text-text">
             <FileText className="w-3.5 h-3.5 text-primary" />
             <span>Data Teknis & Pengukuran Lapangan</span>
+            {isLocked && (
+              <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded">
+                Terkunci
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-text-muted">
             <span>
@@ -244,8 +273,8 @@ export default function LapanganDetailPage({
           onClick={() => setIsDataModalOpen(true)}
           className="btn-secondary h-8 px-3 text-xs font-semibold gap-1.5 shrink-0"
         >
-          <Edit3 className="w-3.5 h-3.5 text-primary" />
-          <span>Isi / Edit Data</span>
+          {isLocked ? <Eye className="w-3.5 h-3.5 text-primary" /> : <Edit3 className="w-3.5 h-3.5 text-primary" />}
+          <span>{isLocked ? 'Lihat Data' : 'Isi / Edit Data'}</span>
         </button>
       </div>
 
@@ -264,28 +293,30 @@ export default function LapanganDetailPage({
           />
         </div>
 
-        {/* Batch Gallery Import Button */}
-        <div className="pt-2 border-t border-border flex items-center justify-between">
-          <input
-            type="file"
-            ref={batchFileInputRef}
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={handleBatchFileSelect}
-          />
-          <span className="text-[11px] text-text-muted">
-            Punya banyak foto di galeri HP?
-          </span>
-          <button
-            type="button"
-            onClick={() => batchFileInputRef.current?.click()}
-            className="btn-secondary h-8 px-3 text-xs font-semibold gap-1.5"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-primary" />
-            <span>Impor Banyak Sekaligus</span>
-          </button>
-        </div>
+        {/* Batch Gallery Import Button - Hanya jika belum final */}
+        {!isLocked && (
+          <div className="pt-2 border-t border-border flex items-center justify-between">
+            <input
+              type="file"
+              ref={batchFileInputRef}
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={handleBatchFileSelect}
+            />
+            <span className="text-[11px] text-text-muted">
+              Punya banyak foto di galeri HP?
+            </span>
+            <button
+              type="button"
+              onClick={() => batchFileInputRef.current?.click()}
+              className="btn-secondary h-8 px-3 text-xs font-semibold gap-1.5"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-primary" />
+              <span>Impor Banyak Sekaligus</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Accordion Slot Groups */}
@@ -349,7 +380,7 @@ export default function LapanganDetailPage({
                                 });
                               }
                             }}
-                            className={`w-13 h-13 rounded-input bg-bg-subtle border border-border flex flex-col items-center justify-center shrink-0 overflow-hidden relative select-none ${
+                            className={`w-12 h-12 min-w-[48px] min-h-[48px] max-w-[48px] max-h-[48px] rounded-input bg-bg-subtle border border-border flex flex-col items-center justify-center shrink-0 overflow-hidden relative select-none ${
                               isFilled && photo ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 group' : ''
                             }`}
                             title={isFilled && photo ? 'Klik untuk memperbesar pratinjau foto' : undefined}
@@ -373,7 +404,7 @@ export default function LapanganDetailPage({
                                 </div>
                               </>
                             ) : isFilled ? (
-                              <CheckCircle2 className="w-6 h-6 text-status-success-text" />
+                              <CheckCircle2 className="w-5 h-5 text-status-success-text" />
                             ) : (
                               <>
                                 <Camera className="w-4 h-4 text-text-muted opacity-50" />
@@ -438,25 +469,48 @@ export default function LapanganDetailPage({
                         {/* Right: Action Buttons */}
                         {!slot.reuse_of && (
                           <div className="flex items-center gap-1.5 shrink-0">
-                            {/* Tombol Kamera */}
-                            <Link
-                              href={`/lapangan/${id}/foto/${slot.key}?mode=kamera`}
-                              className="btn-primary h-9 px-2.5 text-xs font-medium gap-1 min-w-[40px] flex items-center justify-center"
-                              title="Buka Kamera"
-                            >
-                              <Camera className="w-4 h-4" />
-                              <span className="hidden sm:inline">Kamera</span>
-                            </Link>
+                            {isLocked ? (
+                              isFilled && photo ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPreviewPhoto({
+                                    ...photo,
+                                    label: slot.label,
+                                    slot,
+                                    previewUrl: photo.url || photo.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`,
+                                  })}
+                                  className="btn-secondary h-8 px-2.5 text-xs font-semibold gap-1 flex items-center justify-center text-primary"
+                                  title="Pratinjau Foto"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Lihat</span>
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-text-muted italic px-2">Terkunci</span>
+                              )
+                            ) : (
+                              <>
+                                {/* Tombol Kamera */}
+                                <Link
+                                  href={`/lapangan/${id}/foto/${slot.key}?mode=kamera`}
+                                  className="btn-primary h-9 px-2.5 text-xs font-medium gap-1 min-w-[40px] flex items-center justify-center"
+                                  title="Buka Kamera"
+                                >
+                                  <Camera className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Kamera</span>
+                                </Link>
 
-                            {/* Tombol Galeri */}
-                            <Link
-                              href={`/lapangan/${id}/foto/${slot.key}?mode=galeri`}
-                              className="btn-secondary h-9 px-2.5 text-xs font-medium gap-1 min-w-[40px] flex items-center justify-center"
-                              title="Pilih dari Galeri"
-                            >
-                              <ImageIcon className="w-4 h-4" />
-                              <span className="hidden sm:inline">Galeri</span>
-                            </Link>
+                                {/* Tombol Galeri */}
+                                <Link
+                                  href={`/lapangan/${id}/foto/${slot.key}?mode=galeri`}
+                                  className="btn-secondary h-9 px-2.5 text-xs font-medium gap-1 min-w-[40px] flex items-center justify-center"
+                                  title="Pilih dari Galeri"
+                                >
+                                  <ImageIcon className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Galeri</span>
+                                </Link>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -493,6 +547,12 @@ export default function LapanganDetailPage({
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
                 <h3 className="text-base font-bold text-text">Isian Data Teknis Lapangan</h3>
+                {isLocked && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    Terkunci
+                  </span>
+                )}
               </div>
               <button
                 type="button"
@@ -518,10 +578,11 @@ export default function LapanganDetailPage({
                   </label>
                   <input
                     type="text"
+                    disabled={isLocked}
                     value={fieldData.teknisi || ''}
                     onChange={(e) => setFieldData({ ...fieldData, teknisi: e.target.value })}
                     placeholder="Contoh: Ahmad Fauzi / Tim OMOV"
-                    className="form-input text-xs"
+                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
                     required
                   />
                 </div>
@@ -533,10 +594,11 @@ export default function LapanganDetailPage({
                   <input
                     type="number"
                     step="0.1"
+                    disabled={isLocked}
                     value={fieldData.tegangan_ups_it || ''}
                     onChange={(e) => setFieldData({ ...fieldData, tegangan_ups_it: e.target.value })}
                     placeholder="Contoh: 220"
-                    className="form-input text-xs"
+                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
                   />
                 </div>
 
@@ -547,10 +609,11 @@ export default function LapanganDetailPage({
                   <input
                     type="number"
                     step="0.01"
+                    disabled={isLocked}
                     value={fieldData.grounding_ups_it || ''}
                     onChange={(e) => setFieldData({ ...fieldData, grounding_ups_it: e.target.value })}
                     placeholder="Contoh: 1.2"
-                    className="form-input text-xs"
+                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
                   />
                 </div>
 
@@ -560,10 +623,11 @@ export default function LapanganDetailPage({
                   </label>
                   <input
                     type="text"
+                    disabled={isLocked}
                     value={fieldData.type_mesin_baru || ''}
                     onChange={(e) => setFieldData({ ...fieldData, type_mesin_baru: e.target.value })}
                     placeholder="Contoh: NCR 6625"
-                    className="form-input text-xs"
+                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
                   />
                 </div>
 
@@ -573,10 +637,11 @@ export default function LapanganDetailPage({
                   </label>
                   <input
                     type="text"
+                    disabled={isLocked}
                     value={fieldData.serial_nomor || ''}
                     onChange={(e) => setFieldData({ ...fieldData, serial_nomor: e.target.value })}
                     placeholder="Contoh: SN-88992211"
-                    className="form-input text-xs"
+                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
                   />
                 </div>
 
@@ -586,10 +651,11 @@ export default function LapanganDetailPage({
                   </label>
                   <textarea
                     rows={2}
+                    disabled={isLocked}
                     value={fieldData.alamat || ''}
                     onChange={(e) => setFieldData({ ...fieldData, alamat: e.target.value })}
                     placeholder="Alamat penempatan ATM..."
-                    className="form-input text-xs resize-none"
+                    className="form-input text-xs resize-none disabled:bg-bg-subtle disabled:text-text-muted"
                   />
                 </div>
               </div>
@@ -600,20 +666,22 @@ export default function LapanganDetailPage({
                   onClick={() => setIsDataModalOpen(false)}
                   className="btn-secondary h-9 px-4 text-xs font-semibold"
                 >
-                  Batal
+                  {isLocked ? 'Tutup' : 'Batal'}
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSavingFieldData}
-                  className="btn-primary h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm disabled:opacity-50"
-                >
-                  {isSavingFieldData ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  <span>{isSavingFieldData ? 'Menyimpan...' : 'Simpan Data Teknis'}</span>
-                </button>
+                {!isLocked && (
+                  <button
+                    type="submit"
+                    disabled={isSavingFieldData}
+                    className="btn-primary h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm disabled:opacity-50"
+                  >
+                    {isSavingFieldData ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    <span>{isSavingFieldData ? 'Menyimpan...' : 'Simpan Data Teknis'}</span>
+                  </button>
+                )}
               </div>
             </form>
           </div>

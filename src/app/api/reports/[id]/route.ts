@@ -78,9 +78,16 @@ export async function PATCH(
         // Ambil data lama agar tidak menimpa field data lain jika save parsial
         const { data: currentReport } = await adminClient
           .from('reports')
-          .select('data')
+          .select('status, data')
           .eq('id', id)
           .single();
+
+        if (currentReport && (currentReport.status === 'final' || currentReport.status === 'terarsip')) {
+          return NextResponse.json(
+            { success: false, error: 'Laporan ini telah berstatus FINAL dan dikunci oleh Supervisor. Data tidak dapat diubah.' },
+            { status: 403 }
+          );
+        }
 
         const mergedData = { ...(currentReport?.data || {}), ...(body.data || {}) };
         updates.data = mergedData;
@@ -115,6 +122,14 @@ export async function PATCH(
       } catch (err) {
         console.error('Supabase patch report error:', err);
       }
+    }
+
+    const existingMock = db.getReportById(id);
+    if (existingMock && (existingMock.status === 'final' || existingMock.status === 'terarsip')) {
+      return NextResponse.json(
+        { success: false, error: 'Laporan ini telah berstatus FINAL dan dikunci oleh Supervisor. Data tidak dapat diubah.' },
+        { status: 403 }
+      );
     }
 
     const updated = db.updateReportData(id, body.data || {}, body.status);

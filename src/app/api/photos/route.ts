@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { db } from '@/lib/store/mock-db';
 import { photoStore } from '@/lib/store/photo-store';
 import { PHOTO_SLOTS } from '@/types/slot';
 
@@ -73,6 +74,15 @@ export async function POST(request: Request) {
 
     const key = `${reportId}_${slotKey}`;
 
+    // Cek apakah laporan sudah berstatus Final / Terarsip (Terkunci)
+    const mockRep = db.getReportById(reportId);
+    if (mockRep && (mockRep.status === 'final' || mockRep.status === 'terarsip')) {
+      return NextResponse.json(
+        { success: false, error: 'Laporan ini telah berstatus FINAL dan dikunci oleh Supervisor. Foto baru tidak dapat ditambahkan.' },
+        { status: 403 }
+      );
+    }
+
     const hasSupabaseUrl =
       !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
       !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
@@ -89,6 +99,21 @@ export async function POST(request: Request) {
     if (hasSupabaseUrl && hasServiceKey) {
       try {
         const adminClient = createAdminClient();
+
+        if (isUuid(reportId)) {
+          const { data: supaRep } = await adminClient
+            .from('reports')
+            .select('status')
+            .eq('id', reportId)
+            .single();
+
+          if (supaRep && (supaRep.status === 'final' || supaRep.status === 'terarsip')) {
+            return NextResponse.json(
+              { success: false, error: 'Laporan ini telah berstatus FINAL dan dikunci oleh Supervisor. Foto baru tidak dapat ditambahkan.' },
+              { status: 403 }
+            );
+          }
+        }
         const filePath = `${reportId}/${slotKey}.jpg`;
 
         // Upload berkas foto utama ke bucket 'laporan-foto'
