@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, 
   Camera, 
+  Image as ImageIcon,
   RotateCw, 
   RotateCcw, 
   ZoomIn, 
@@ -18,7 +19,8 @@ import {
   MapPin,
   Eye,
   Sliders,
-  Sparkles
+  Sparkles,
+  UploadCloud
 } from 'lucide-react';
 import { PHOTO_SLOTS, PhotoSlot } from '@/types/slot';
 import { 
@@ -59,6 +61,9 @@ export default function PhotoStudioPage({
   const [autoLevel, setAutoLevel] = useState(false);
   const [watermark, setWatermark] = useState(initialMode === 'kamera');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [estimatedKb, setEstimatedKb] = useState<number | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | undefined>();
   const [qualityWarning, setQualityWarning] = useState<ImageQualityMetrics | null>(null);
@@ -67,6 +72,16 @@ export default function PhotoStudioPage({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const canvasPreviewRef = useRef<HTMLCanvasElement | null>(null);
   const imageElementRef = useRef<HTMLImageElement | null>(null);
+
+  // Auto trigger input file jika masuk dengan mode galeri
+  useEffect(() => {
+    if (initialMode === 'galeri' && !imageSrc) {
+      const timer = setTimeout(() => {
+        fileInputRef.current?.click();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [initialMode, imageSrc]);
 
   // Ambil info laporan & GPS
   useEffect(() => {
@@ -237,10 +252,13 @@ export default function PhotoStudioPage({
     }
   };
 
-  // Simpan foto: Kompresi sesuai tier -> Masuk Antrean IndexedDB -> Upload
+  // Simpan foto: Kompresi sesuai tier -> Upload Langsung ke Cloud -> Backup Antrean Offline
   const handleSave = async () => {
     if (!imageElementRef.current || !slot) return;
     setIsProcessing(true);
+    setIsUploading(true);
+    setUploadSuccess(false);
+    setUploadMessage('Mengompresi dan menyiapkan gambar...');
 
     try {
       const img = imageElementRef.current;
@@ -269,7 +287,7 @@ export default function PhotoStudioPage({
         editorConfig
       );
 
-      // Simpan ke antrean IndexedDB
+      // Simpan salinan ke antrean IndexedDB lokal sebagai cadangan
       await queueManager.enqueuePhoto({
         id: `${reportId}_${slotKey}`,
         reportId,
@@ -290,15 +308,55 @@ export default function PhotoStudioPage({
         createdAt: new Date().toISOString(),
       });
 
-      // Picu sinkronisasi upload jika online
+      // Jika online, langsung upload ke server dengan feedback jelas
       if (navigator.onLine) {
-        queueManager.processQueue();
+        setUploadMessage('Menyimpan ke server cloud OMOV...');
+
+        const formData = new FormData();
+        formData.append('reportId', reportId);
+        formData.append('slotKey', slotKey);
+        formData.append('file', result.blob, `${slotKey}.jpg`);
+        if (result.thumbBlob) {
+          formData.append('thumb', result.thumbBlob, `thumb_${slotKey}.jpg`);
+        }
+        formData.append(
+          'meta',
+          JSON.stringify({
+            width: result.width,
+            height: result.height,
+            bytes: result.bytes,
+            tier: slot.tier,
+            takenAt: new Date().toISOString(),
+            source: initialMode === 'kamera' ? 'kamera' : 'galeri',
+            watermark,
+          })
+        );
+
+        const res = await fetch('/api/photos', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.ok) {
+          await queueManager.removeItem(`${reportId}_${slotKey}`);
+          setUploadSuccess(true);
+          setUploadMessage('Foto berhasil disimpan & diunggah!');
+          setTimeout(() => {
+            router.push(`/lapangan/${reportId}`);
+          }, 600);
+          return;
+        }
       }
 
-      router.push(`/lapangan/${reportId}`);
+      // Jika offline atau jaringan lambat, tersimpan di antrean perangkat
+      setUploadSuccess(true);
+      setUploadMessage('Tersimpan di antrean offline (akan otomatis terunggah)');
+      setTimeout(() => {
+        router.push(`/lapangan/${reportId}`);
+      }, 900);
     } catch (e: any) {
       alert(`Gagal menyimpan foto: ${e.message}`);
-    } finally {
+      setIsUploading(false);
       setIsProcessing(false);
     }
   };
@@ -408,6 +466,39 @@ export default function PhotoStudioPage({
             )}
           </div>
         )}
+
+        {/* VIEW 3: PEMILIH GALERI KETIKA BELUM ADA GAMBAR & KAMERA NONAKTIF */}
+        {!viewfinderActive && !imageSrc && (
+          <div className="relative z-10 flex flex-col items-center justify-center p-6 text-center max-w-sm animate-in fade-in">
+            <div className="w-20 h-20 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center mb-4 text-white shadow-xl">
+              <ImageIcon className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-base font-bold text-white mb-1">
+              Unggah Foto #{slot.sort}
+            </h3>
+            <p className="text-xs text-white/70 mb-5 leading-relaxed">
+              {slot.label} (Rasio {slot.aspect_w}:{slot.aspect_h})
+            </p>
+            <div className="flex flex-col gap-2.5 w-full">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-3 px-4 rounded-btn font-semibold text-xs bg-primary hover:bg-primary-hover text-white transition-colors flex items-center justify-center gap-2 shadow-md"
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span>Pilih Foto dari Galeri HP</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewfinderActive(true)}
+                className="w-full py-2.5 px-4 rounded-btn font-semibold text-xs bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center justify-center gap-2 border border-white/20"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Buka Kamera Langsung</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Toolbars */}
@@ -442,6 +533,13 @@ export default function PhotoStudioPage({
               </div>
               <span>Galeri</span>
             </button>
+          </div>
+        )}
+
+        {/* If Not Viewfinder and No Image: Simple Info Bar */}
+        {!viewfinderActive && !imageSrc && (
+          <div className="flex items-center justify-center py-2 text-xs text-white/70">
+            <span>Pilih foto dari galeri HP atau aktifkan kamera langsung di atas.</span>
           </div>
         )}
 
@@ -558,6 +656,37 @@ export default function PhotoStudioPage({
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {/* Uploading Progress Modal Feedback */}
+      {isUploading && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in">
+          {uploadSuccess ? (
+            <div className="flex flex-col items-center animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 border border-emerald-500/30">
+                <Check className="w-8 h-8 stroke-[2.5]" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-1">
+                {uploadMessage}
+              </h3>
+              <p className="text-xs text-white/70">
+                Mengalihkan kembali ke daftar slot...
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center animate-in fade-in">
+              <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center mb-3 border border-primary/30">
+                <RefreshCw className="w-8 h-8 animate-spin" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-1">
+                {uploadMessage}
+              </h3>
+              <p className="text-xs text-white/70 max-w-xs">
+                Mohon tunggu sebentar, foto sedang diproses dan diunggah...
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

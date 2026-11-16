@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { db } from '@/lib/store/mock-db';
 import { photoStore } from '@/lib/store/photo-store';
 import { PHOTO_SLOTS } from '@/types/slot';
+
+export const dynamic = 'force-dynamic';
+
+const isUuid = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
 export async function PATCH(request: Request) {
   try {
@@ -54,6 +60,34 @@ export async function PATCH(request: Request) {
       photo.review = review;
       photo.review_note = review === 'ditolak' ? note.trim() : undefined;
       photoStore.set(key, photo);
+    }
+
+    const hasSupabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
+    const hasServiceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY &&
+      !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy');
+
+    if (hasSupabaseUrl && hasServiceKey && isUuid(reportId)) {
+      try {
+        const adminClient = createAdminClient();
+        for (const sKey of keysToProcess) {
+          await adminClient
+            .from('report_photos')
+            .update({
+              review,
+              review_note: review === 'ditolak' ? note.trim() : null,
+            })
+            .match({ report_id: reportId, slot_key: sKey });
+        }
+
+        if (review === 'ditolak') {
+          await adminClient.from('reports').update({ status: 'perlu_perbaikan' }).eq('id', reportId);
+        }
+      } catch (e) {
+        console.error('Supabase review photo error:', e);
+      }
     }
 
     // Dapatkan data laporan saat ini
