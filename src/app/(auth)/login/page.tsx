@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileCheck2, Lock, Mail, ArrowRight, ShieldCheck, HardHat, UserPlus, X } from 'lucide-react';
 
@@ -11,8 +11,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Setup initial superadmin state
-  const [needsSetup, setNeedsSetup] = useState(false);
+  // Setup initial superadmin modal state
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [setupNama, setSetupNama] = useState('');
   const [setupEmail, setSetupEmail] = useState('');
@@ -20,22 +19,6 @@ export default function LoginPage() {
   const [setupConfirmPassword, setSetupConfirmPassword] = useState('');
   const [setupError, setSetupError] = useState('');
   const [isSettingUp, setIsSettingUp] = useState(false);
-
-  useEffect(() => {
-    // Cek apakah ada superadmin yang terdaftar
-    const checkSetup = async () => {
-      try {
-        const res = await fetch('/api/auth/setup-admin');
-        const data = await res.json();
-        if (data.success && data.needsSetup) {
-          setNeedsSetup(true);
-        }
-      } catch (err) {
-        console.error('Setup check failed:', err);
-      }
-    };
-    checkSetup();
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,26 +125,27 @@ export default function LoginPage() {
           Gunakan akun Superadmin atau Supervisor terdaftar Anda
         </p>
 
-        {/* Banner Initial Setup jika database belum punya Superadmin */}
-        {needsSetup && (
-          <div className="mb-4 p-3 rounded-card bg-[#FFF3DC] border border-amber-200 text-xs">
-            <div className="flex items-center gap-1.5 font-semibold text-[#8A5300] mb-1">
-              <ShieldCheck className="w-4 h-4 text-amber-600" />
-              <span>Inisialisasi Pertama Kali</span>
-            </div>
-            <p className="text-[#8A5300] text-[11px] mb-2 leading-relaxed">
-              Database belum memiliki akun Superadmin. Daftarkan akun Superadmin pertama Anda sekarang.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsSetupOpen(true)}
-              className="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-btn font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Buat Akun Superadmin Pertama</span>
-            </button>
+        {/* Kotak Inisialisasi Akun Superadmin - Selalu Muncul untuk Akses Cepat */}
+        <div className="mb-5 p-3.5 rounded-card bg-[#FFF3DC] border border-amber-200 text-xs shadow-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-[#8A5300] mb-1">
+            <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Inisialisasi / Setup Akun Superadmin</span>
           </div>
-        )}
+          <p className="text-[#8A5300] text-[11px] mb-2.5 leading-relaxed">
+            Belum memiliki akun Superadmin? Klik tombol di bawah untuk membuat akun Superadmin pertama Anda.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSetupError('');
+              setIsSetupOpen(true);
+            }}
+            className="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-btn font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Buat Akun Superadmin Pertama</span>
+          </button>
+        </div>
 
         {errorMessage && (
           <div className="mb-4 p-3 rounded-input bg-status-danger-bg text-status-danger-text text-xs border border-red-200">

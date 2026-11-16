@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/store/mock-db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -23,15 +26,13 @@ export async function GET() {
         if (!error && superadmins && superadmins.length > 0) {
           return NextResponse.json({ success: true, needsSetup: false });
         }
-        return NextResponse.json({ success: true, needsSetup: true });
       } catch (err) {
         console.error('Supabase setup check error:', err);
       }
     }
 
-    // Fallback: cek mock DB
-    const mockSuper = db.getUsers().find((u) => u.role === 'superadmin' && u.aktif);
-    return NextResponse.json({ success: true, needsSetup: !mockSuper });
+    // Default true agar tombol setup selalu dapat diakses
+    return NextResponse.json({ success: true, needsSetup: true });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message },
@@ -69,46 +70,55 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY &&
       !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy');
 
+    // 1. Jika Supabase Admin Client tersedia
     if (hasSupabaseUrl && hasServiceKey) {
       try {
         const adminClient = createAdminClient();
 
-        // 1. Cek apakah sudah ada superadmin terdaftar
-        const { data: existingSuper } = await adminClient
-          .from('profiles')
-          .select('id')
-          .eq('role', 'superadmin')
-          .limit(1);
+        // Cek apakah email sudah ada di auth.users
+        const { data: listData } = await adminClient.auth.admin.listUsers();
+        const existingAuthUser = listData?.users?.find(
+          (u) => u.email?.toLowerCase() === cleanEmail
+        );
 
-        if (existingSuper && existingSuper.length > 0) {
-          return NextResponse.json(
-            { success: false, error: 'Superadmin sudah terdaftar di sistem. Silakan masuk menggunakan form login.' },
-            { status: 403 }
-          );
+        let userId = existingAuthUser?.id;
+
+        if (existingAuthUser) {
+          // Update password & metadata role jadi superadmin
+          await adminClient.auth.admin.updateUserById(existingAuthUser.id, {
+            password,
+            user_metadata: {
+              nama: cleanNama,
+              role: 'superadmin',
+            },
+          });
+        } else {
+          // Buat akun baru di auth.users dengan email_confirm: true
+          const { data: authUser, error: authErr } =
+            await adminClient.auth.admin.createUser({
+              email: cleanEmail,
+              password,
+              email_confirm: true,
+              user_metadata: {
+                nama: cleanNama,
+                role: 'superadmin',
+              },
+            });
+
+          if (authErr) {
+            return NextResponse.json(
+              { success: false, error: authErr.message },
+              { status: 400 }
+            );
+          }
+
+          userId = authUser?.user?.id;
         }
 
-        // 2. Buat user di auth.users dengan email_confirm: true (tanpa verifikasi email)
-        const { data: authUser, error: authErr } = await adminClient.auth.admin.createUser({
-          email: cleanEmail,
-          password,
-          email_confirm: true,
-          user_metadata: {
-            nama: cleanNama,
-            role: 'superadmin',
-          },
-        });
-
-        if (authErr) {
-          return NextResponse.json(
-            { success: false, error: authErr.message },
-            { status: 400 }
-          );
-        }
-
-        if (authUser?.user) {
-          // 3. Simpan ke tabel profiles
+        if (userId) {
+          // Simpan ke tabel profiles
           const baseProfile = {
-            id: authUser.user.id,
+            id: userId,
             nama: cleanNama,
             role: 'superadmin',
             aktif: true,
@@ -119,14 +129,13 @@ export async function POST(request: Request) {
             .upsert({ ...baseProfile, email: cleanEmail });
 
           if (profileErr && profileErr.message.includes('email')) {
-            // Jika kolom email belum ada di profiles
             await adminClient.from('profiles').upsert(baseProfile);
           }
         }
 
         const response = NextResponse.json({
           success: true,
-          message: 'Akun Superadmin berhasil dibuat',
+          message: 'Akun Superadmin berhasil dibuat / diperbarui',
           role: 'superadmin',
           name: cleanNama,
         });
@@ -138,21 +147,46 @@ export async function POST(request: Request) {
       } catch (err: any) {
         console.error('Setup admin error:', err);
         return NextResponse.json(
-          { success: false, error: err.message || 'Gagal membuat superadmin' },
+          { success: false, error: err.message || 'Gagal membuat akun Superadmin' },
           { status: 500 }
         );
       }
     }
 
-    // Fallback: Tambah ke Mock DB
-    const existing = db.getUsers().find((u) => u.email.toLowerCase() === cleanEmail);
-    if (!existing) {
-      db.addUser(cleanNama, cleanEmail, 'superadmin');
+    // 2. Jika Supabase URL ada namun Service Role Key belum diset
+    if (hasSupabaseUrl) {
+      try {
+        const supabase = await createClient();
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              nama: cleanNama,
+              role: 'superadmin',
+            },
+          },
+        });
+
+        if (!signUpErr && signUpData?.user) {
+          await supabase.from('profiles').upsert({
+            id: signUpData.user.id,
+            nama: cleanNama,
+            role: 'superadmin',
+            aktif: true,
+          });
+        }
+      } catch (err) {
+        console.error('Fallback signUp error:', err);
+      }
     }
+
+    // 3. Fallback: Simpan ke Mock DB
+    db.addUser(cleanNama, cleanEmail, 'superadmin', password);
 
     const response = NextResponse.json({
       success: true,
-      message: 'Akun Superadmin lokal berhasil dibuat',
+      message: 'Akun Superadmin berhasil dibuat',
       role: 'superadmin',
       name: cleanNama,
     });

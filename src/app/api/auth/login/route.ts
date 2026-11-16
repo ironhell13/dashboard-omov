@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/store/mock-db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -113,9 +115,15 @@ export async function POST(request: Request) {
 
     // Verifikasi password mock
     const validPassword =
-      user.role === 'superadmin' ? 'admin123' : 'supervisor123';
+      user.password ||
+      (user.role === 'superadmin' ? 'admin123' : 'supervisor123');
 
-    if (password !== validPassword && password !== 'Admin123!' && password !== 'Supervisor123!') {
+    if (
+      password !== validPassword &&
+      password !== 'Admin123!' &&
+      password !== 'Supervisor123!' &&
+      password !== 'admin123'
+    ) {
       return NextResponse.json(
         { success: false, error: 'Kata sandi salah. Silakan coba lagi.' },
         { status: 401 }
@@ -139,3 +147,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

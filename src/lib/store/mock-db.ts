@@ -22,6 +22,7 @@ export interface UserAccount {
   nama: string;
   email: string;
   role: UserRole;
+  password?: string;
   aktif: boolean;
   createdAt: string;
 }
@@ -243,12 +244,20 @@ export const db = {
 
   // Users
   getUsers: () => [...mockUsers],
-  addUser: (nama: string, email: string, role: UserRole) => {
+  addUser: (nama: string, email: string, role: UserRole, password?: string) => {
+    const existing = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      existing.nama = nama;
+      existing.role = role;
+      if (password) existing.password = password;
+      return existing;
+    }
     const newUser: UserAccount = {
       id: `usr-${Date.now().toString(36)}`,
       nama,
       email,
       role,
+      password,
       aktif: true,
       createdAt: new Date().toISOString().split('T')[0],
     };
