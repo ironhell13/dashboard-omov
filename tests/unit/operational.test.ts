@@ -291,6 +291,79 @@ describe('Tahap 5: Operasional & Integrasi Cloud (SPEC A.13 & A.14)', () => {
       expect(json.success).toBe(false);
       expect(json.error).toContain('minimal 8 karakter');
     });
+
+    it('mendukung CRUD Pengguna lengkap (Create, Read, Update, Delete)', async () => {
+      const { GET, POST, PATCH, DELETE } = await import('@/app/api/users/route');
+
+      // 1. CREATE
+      const createReq = new Request('http://localhost:3000/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nama: 'User Uji Coba',
+          email: 'uji.coba@omov.com',
+          password: 'Password123!',
+          role: 'supervisor',
+        }),
+      });
+      const createRes = await POST(createReq);
+      const createJson = await createRes.json();
+      expect(createRes.status).toBe(200);
+      expect(createJson.success).toBe(true);
+      expect(createJson.data.nama).toBe('User Uji Coba');
+      const createdId = createJson.data.id;
+
+      // 2. READ
+      const getRes = await GET();
+      const getJson = await getRes.json();
+      expect(getRes.status).toBe(200);
+      expect(getJson.success).toBe(true);
+      expect(getJson.data.some((u: any) => u.id === createdId)).toBe(true);
+
+      // 3. UPDATE: Edit Profil (Nama & Role)
+      const updateReq = new Request('http://localhost:3000/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: createdId,
+          nama: 'User Uji Coba Diperbarui',
+          role: 'lapangan',
+        }),
+      });
+      const updateRes = await PATCH(updateReq);
+      const updateJson = await updateRes.json();
+      expect(updateRes.status).toBe(200);
+      expect(updateJson.success).toBe(true);
+
+      // 4. UPDATE: Reset Password
+      const resetReq = new Request('http://localhost:3000/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: createdId,
+          action: 'reset_password',
+          password: 'NewPassword123!',
+        }),
+      });
+      const resetRes = await PATCH(resetReq);
+      const resetJson = await resetRes.json();
+      expect(resetRes.status).toBe(200);
+      expect(resetJson.success).toBe(true);
+
+      // 5. DELETE: Hapus akun
+      const deleteReq = new Request(`http://localhost:3000/api/users?id=${createdId}`, {
+        method: 'DELETE',
+      });
+      const deleteRes = await DELETE(deleteReq);
+      const deleteJson = await deleteRes.json();
+      expect(deleteRes.status).toBe(200);
+      expect(deleteJson.success).toBe(true);
+
+      // Verifikasi sudah terhapus
+      const verifyRes = await GET();
+      const verifyJson = await verifyRes.json();
+      expect(verifyJson.data.some((u: any) => u.id === createdId)).toBe(false);
+    });
   });
 });
 

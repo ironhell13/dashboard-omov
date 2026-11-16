@@ -269,4 +269,19 @@ export const db = {
     if (u) u.aktif = !u.aktif;
     return u;
   },
+  updateUser: (id: string, updates: Partial<UserAccount>) => {
+    const idx = mockUsers.findIndex(user => user.id === id);
+    if (idx === -1) return null;
+    mockUsers[idx] = {
+      ...mockUsers[idx],
+      ...updates,
+    };
+    return mockUsers[idx];
+  },
+  deleteUser: (id: string) => {
+    const idx = mockUsers.findIndex(user => user.id === id);
+    if (idx === -1) return false;
+    mockUsers.splice(idx, 1);
+    return true;
+  },
 };
