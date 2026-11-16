@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileCheck2, Lock, Mail, ArrowRight, ShieldCheck, HardHat, UserPlus, X } from 'lucide-react';
+import { FileCheck2, Lock, Mail, ArrowRight, HardHat } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,15 +10,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Setup initial superadmin modal state
-  const [isSetupOpen, setIsSetupOpen] = useState(false);
-  const [setupNama, setSetupNama] = useState('');
-  const [setupEmail, setSetupEmail] = useState('');
-  const [setupPassword, setSetupPassword] = useState('');
-  const [setupConfirmPassword, setSetupConfirmPassword] = useState('');
-  const [setupError, setSetupError] = useState('');
-  const [isSettingUp, setIsSettingUp] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,54 +44,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleCreateInitialSuperadmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSetupError('');
-
-    if (!setupNama.trim() || !setupEmail.trim() || !setupPassword) {
-      setSetupError('Semua kolom wajib diisi');
-      return;
-    }
-
-    if (setupPassword.length < 8) {
-      setSetupError('Kata sandi minimal 8 karakter');
-      return;
-    }
-
-    if (setupPassword !== setupConfirmPassword) {
-      setSetupError('Konfirmasi kata sandi tidak cocok');
-      return;
-    }
-
-    setIsSettingUp(true);
-    try {
-      const res = await fetch('/api/auth/setup-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama: setupNama.trim(),
-          email: setupEmail.trim(),
-          password: setupPassword,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setSetupError(data.error || 'Gagal membuat akun Superadmin');
-        return;
-      }
-
-      // Berhasil membuat dan otomatis login
-      setIsSetupOpen(false);
-      router.push('/supervisor');
-      router.refresh();
-    } catch (err: any) {
-      setSetupError(err.message || 'Terjadi kesalahan sistem');
-    } finally {
-      setIsSettingUp(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-bg-subtle flex flex-col justify-center items-center px-4 py-8">
       {/* Brand Header */}
@@ -121,31 +64,9 @@ export default function LoginPage() {
         <h2 className="text-lg font-semibold text-text mb-1">
           Masuk ke Akun
         </h2>
-        <p className="text-xs text-text-muted mb-4">
+        <p className="text-xs text-text-muted mb-5">
           Gunakan akun Superadmin atau Supervisor terdaftar Anda
         </p>
-
-        {/* Kotak Inisialisasi Akun Superadmin - Selalu Muncul untuk Akses Cepat */}
-        <div className="mb-5 p-3.5 rounded-card bg-[#FFF3DC] border border-amber-200 text-xs shadow-xs">
-          <div className="flex items-center gap-1.5 font-semibold text-[#8A5300] mb-1">
-            <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>Inisialisasi / Setup Akun Superadmin</span>
-          </div>
-          <p className="text-[#8A5300] text-[11px] mb-2.5 leading-relaxed">
-            Belum memiliki akun Superadmin? Klik tombol di bawah untuk membuat akun Superadmin pertama Anda.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setSetupError('');
-              setIsSetupOpen(true);
-            }}
-            className="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-btn font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Buat Akun Superadmin Pertama</span>
-          </button>
-        </div>
 
         {errorMessage && (
           <div className="mb-4 p-3 rounded-input bg-status-danger-bg text-status-danger-text text-xs border border-red-200">
@@ -214,111 +135,6 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
-
-      {/* Modal Inisialisasi Superadmin Pertama */}
-      {isSetupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white rounded-card border border-border shadow-card p-6 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-text font-semibold">
-                <ShieldCheck className="w-5 h-5 text-amber-600" />
-                <h3 className="text-base">Inisialisasi Superadmin Pertama</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSetupOpen(false)}
-                className="p-1 rounded-md text-text-muted hover:bg-bg-subtle"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-text-muted mb-4">
-              Akun ini akan memiliki hak penuh atas seluruh menu (Pengguna, Google Drive, Master Data, dan Laporan).
-            </p>
-
-            {setupError && (
-              <div className="mb-4 p-3 rounded-input bg-status-danger-bg text-status-danger-text text-xs border border-red-200">
-                {setupError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateInitialSuperadmin} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-text mb-1">
-                  Nama Lengkap
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={setupNama}
-                  onChange={(e) => setSetupNama(e.target.value)}
-                  placeholder="Contoh: Super Administrator"
-                  className="form-input"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-text mb-1">
-                  Email Superadmin
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={setupEmail}
-                  onChange={(e) => setSetupEmail(e.target.value)}
-                  placeholder="admin@perusahaan.com"
-                  className="form-input"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-text mb-1">
-                  Kata Sandi (Minimal 8 Karakter)
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={setupPassword}
-                  onChange={(e) => setSetupPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="form-input"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-text mb-1">
-                  Konfirmasi Kata Sandi
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={setupConfirmPassword}
-                  onChange={(e) => setSetupConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="form-input"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => setIsSetupOpen(false)}
-                  className="btn-secondary h-9 px-4 text-xs font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSettingUp}
-                  className="btn-primary h-9 px-4 text-xs font-semibold"
-                >
-                  {isSettingUp ? 'Mendaftarkan...' : 'Buat Superadmin & Masuk'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Footer Notice */}
       <p className="text-center text-xs text-text-muted mt-8">

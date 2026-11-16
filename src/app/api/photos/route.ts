@@ -10,32 +10,68 @@ const isUuid = (str: string) =>
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const reportId = formData.get('reportId') as string;
-    const slotKey = formData.get('slotKey') as string;
-    const file = formData.get('file') as Blob | null;
-    const thumb = formData.get('thumb') as Blob | null;
-    const metaStr = formData.get('meta') as string | null;
+    const contentType = request.headers.get('content-type') || '';
+    let reportId = '';
+    let slotKey = '';
+    let buffer: Buffer;
+    let thumbBase64: string | undefined;
+    let thumbBuffer: Buffer | null = null;
+    let meta: any = {};
+    let fileSize = 0;
 
-    if (!reportId || !slotKey || !file) {
+    if (contentType.includes('application/json')) {
+      const jsonBody = await request.json();
+      reportId = jsonBody.reportId;
+      slotKey = jsonBody.slotKey;
+      meta = jsonBody.meta || {};
+      const base64Data = jsonBody.base64 || jsonBody.file;
+      if (!base64Data) {
+        return NextResponse.json(
+          { success: false, error: 'Data berkas foto (base64) wajib dikirim' },
+          { status: 400 }
+        );
+      }
+      buffer = Buffer.from(base64Data.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
+      fileSize = buffer.length;
+      if (jsonBody.thumb) {
+        thumbBase64 = jsonBody.thumb;
+        thumbBuffer = Buffer.from(jsonBody.thumb.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
+      }
+    } else {
+      const formData = await request.formData();
+      reportId = formData.get('reportId') as string;
+      slotKey = formData.get('slotKey') as string;
+      const file = formData.get('file') as Blob | null;
+      const thumb = formData.get('thumb') as Blob | null;
+      const metaStr = formData.get('meta') as string | null;
+
+      if (!reportId || !slotKey || !file) {
+        return NextResponse.json(
+          { success: false, error: 'Data laporan, slot, dan berkas foto wajib dikirim' },
+          { status: 400 }
+        );
+      }
+
+      meta = metaStr ? JSON.parse(metaStr) : {};
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      fileSize = file.size;
+
+      if (thumb) {
+        const thumbArrayBuffer = await thumb.arrayBuffer();
+        thumbBuffer = Buffer.from(thumbArrayBuffer);
+        thumbBase64 = `data:image/jpeg;base64,${thumbBuffer.toString('base64')}`;
+      }
+    }
+
+    if (!reportId || !slotKey || !buffer || buffer.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Data laporan, slot, dan berkas foto wajib dikirim' },
         { status: 400 }
       );
     }
 
-    const meta = metaStr ? JSON.parse(metaStr) : {};
     const key = `${reportId}_${slotKey}`;
-
-    // Baca buffer untuk penyimpanan
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    let thumbBase64: string | undefined;
-    if (thumb) {
-      const thumbArrayBuffer = await thumb.arrayBuffer();
-      thumbBase64 = `data:image/jpeg;base64,${Buffer.from(thumbArrayBuffer).toString('base64')}`;
-    }
 
     const hasSupabaseUrl =
       !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -76,8 +112,7 @@ export async function POST(request: Request) {
         }
 
         // Upload thumbnail jika ada
-        if (thumb) {
-          const thumbBuffer = Buffer.from(await thumb.arrayBuffer());
+        if (thumbBuffer) {
           await adminClient.storage
             .from('laporan-foto')
             .upload(`${reportId}/thumb_${slotKey}.jpg`, thumbBuffer, {
@@ -121,10 +156,10 @@ export async function POST(request: Request) {
               report_id: reportId,
               slot_key: slotKey,
               storage_path: filePath,
-              thumb_path: thumb ? `${reportId}/thumb_${slotKey}.jpg` : null,
+              thumb_path: thumbBuffer ? `${reportId}/thumb_${slotKey}.jpg` : null,
               width: meta.width || 1280,
               height: meta.height || 960,
-              bytes: file.size,
+              bytes: fileSize,
               source: meta.source || 'kamera',
               review: 'menunggu',
               uploaded_at: new Date().toISOString(),
@@ -144,7 +179,7 @@ export async function POST(request: Request) {
     // 2. Simpan juga ke cache memori lokal
     photoStore.set(key, {
       slotKey,
-      bytes: file.size,
+      bytes: fileSize,
       width: meta.width || 1280,
       height: meta.height || 960,
       source: meta.source || 'kamera',
@@ -158,7 +193,7 @@ export async function POST(request: Request) {
       success: true,
       data: {
         slotKey,
-        bytes: file.size,
+        bytes: fileSize,
         path: storagePath,
         url: publicUrl,
       },
@@ -242,10 +277,76 @@ export async function GET(request: Request) {
         uploadedAt: val.uploadedAt,
         review: val.review,
         review_note: val.review_note,
+        url: val.thumbBase64 || '',
         thumbBase64: val.thumbBase64,
       });
     }
   });
 
   return NextResponse.json({ success: true, photos });
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { reportId, slotKey, review, review_note } = body;
+
+    if (!reportId || !slotKey || !review) {
+      return NextResponse.json(
+        { success: false, error: 'Data laporan, slot, dan status review wajib disertakan' },
+        { status: 400 }
+      );
+    }
+
+    const hasSupabaseUrl =
+      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
+    const hasServiceKey =
+      (!!process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy')) ||
+      (!!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('dummy'));
+
+    if (hasSupabaseUrl && hasServiceKey && isUuid(reportId)) {
+      try {
+        const adminClient = createAdminClient();
+        const { error } = await adminClient
+          .from('report_photos')
+          .update({
+            review,
+            review_note: review_note || null,
+          })
+          .eq('report_id', reportId)
+          .eq('slot_key', slotKey);
+
+        if (!error) {
+          const key = `${reportId}_${slotKey}`;
+          const existing = photoStore.get(key);
+          if (existing) {
+            existing.review = review;
+            existing.review_note = review_note;
+            photoStore.set(key, existing);
+          }
+          return NextResponse.json({ success: true, review, review_note });
+        }
+      } catch (err) {
+        console.error('Supabase update photo review error:', err);
+      }
+    }
+
+    const key = `${reportId}_${slotKey}`;
+    const existing = photoStore.get(key);
+    if (existing) {
+      existing.review = review;
+      existing.review_note = review_note;
+      photoStore.set(key, existing);
+    }
+
+    return NextResponse.json({ success: true, review, review_note });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
 }
