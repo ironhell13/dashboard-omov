@@ -9,20 +9,20 @@ export function buildDocumentData(
   const d: ReportData = report.data || {};
 
   const sanitizeVal = (val: any) => {
-    if (val === undefined || val === null || val === '') return '-';
-    return String(val);
+    if (val === undefined || val === null || String(val).trim() === '') return '-';
+    return String(val).trim();
   };
 
   const targetJenis = d.jenis_pekerjaan || report.jenis_pekerjaan || 'Trade In';
   const jenisUpper = targetJenis.toUpperCase();
   const targetTanggal = d.tanggal || report.tanggal;
-  const tglTeks = formatTanggalIndonesia(targetTanggal);
-  const hariTeks = getNamaHariIndonesia(targetTanggal);
+  const tglTeks = targetTanggal ? formatTanggalIndonesia(targetTanggal) : '-';
+  const hariTeks = targetTanggal ? getNamaHariIndonesia(targetTanggal) : '-';
 
   const data: Record<string, any> = {
     // Identitas
-    wsid: d.wsid || report.wsid,
-    lokasi: d.lokasi || report.lokasi,
+    wsid: d.wsid || report.wsid || '-',
+    lokasi: d.lokasi || report.lokasi || '-',
     alamat: sanitizeVal(d.alamat),
     wsid_lama: sanitizeVal(d.wsid_lama),
     lokasi_lama: sanitizeVal(d.lokasi_lama),
@@ -32,7 +32,7 @@ export function buildDocumentData(
     jenis_pekerjaan_upper: jenisUpper,
     tanggal_teks: tglTeks,
     hari: hariTeks,
-    kota: sanitizeVal(d.kota) === '-' ? 'Jakarta' : d.kota,
+    kota: sanitizeVal(d.kota),
 
     // Kelistrikan
     tegangan_ups_it: sanitizeVal(d.tegangan_ups_it),
@@ -40,7 +40,7 @@ export function buildDocumentData(
 
     // Jaringan
     initial_vsat: sanitizeVal(d.initial_vsat),
-    konfigurasi: sanitizeVal(d.konfigurasi) === '-' ? 'TCP/IP' : d.konfigurasi,
+    konfigurasi: sanitizeVal(d.konfigurasi),
     ip_address: sanitizeVal(d.ip_address),
 
     // Isi Mesin
@@ -49,18 +49,18 @@ export function buildDocumentData(
     kunci: sanitizeVal(d.kunci),
 
     // Status Perangkat
-    cencon: sanitizeVal(d.cencon) === '-' ? 'Terpasang' : d.cencon,
-    kamera: sanitizeVal(d.kamera) === '-' ? 'Internal & Eksternal (Terpasang)' : d.kamera,
-    perekam: sanitizeVal(d.perekam) === '-' ? 'Internal & Eksternal (Terpasang)' : d.perekam,
-    pin_cover: sanitizeVal(d.pin_cover) === '-' ? 'Terpasang' : d.pin_cover,
-    fdi: sanitizeVal(d.fdi) === '-' ? 'Terpasang' : d.fdi,
-    ac: sanitizeVal(d.ac) === '-' ? 'Terpasang' : d.ac,
+    cencon: sanitizeVal(d.cencon),
+    kamera: sanitizeVal(d.kamera),
+    perekam: sanitizeVal(d.perekam),
+    pin_cover: sanitizeVal(d.pin_cover),
+    fdi: sanitizeVal(d.fdi),
+    ac: sanitizeVal(d.ac),
 
     // Outdoor & Indoor
-    neon_sign: sanitizeVal(d.neon_sign) === '-' ? 'Terpasang' : d.neon_sign,
-    stiker_mesin: sanitizeVal(d.stiker_mesin) === '-' ? 'Terpasang' : d.stiker_mesin,
-    kabel_jalur: sanitizeVal(d.kabel_jalur) === '-' ? 'Rapih tidak terlihat' : d.kabel_jalur,
-    colokan_listrik: sanitizeVal(d.colokan_listrik) === '-' ? 'Terpasang' : d.colokan_listrik,
+    neon_sign: sanitizeVal(d.neon_sign),
+    stiker_mesin: sanitizeVal(d.stiker_mesin),
+    kabel_jalur: sanitizeVal(d.kabel_jalur),
+    colokan_listrik: sanitizeVal(d.colokan_listrik),
 
     // Perangkat Eksternal
     perekam_eksternal_merk: sanitizeVal(d.perekam_eksternal?.merk),
@@ -73,18 +73,18 @@ export function buildDocumentData(
     led_sn: sanitizeVal(d.led?.sn),
 
     // Pengaman & Letak
-    letak_mesin: sanitizeVal(d.letak_mesin) === '-' ? 'Lobby / Ruang ATM' : d.letak_mesin,
-    tanggal_email_permintaan: sanitizeVal(d.tanggal_email_permintaan) === '-' ? tglTeks : d.tanggal_email_permintaan,
+    letak_mesin: sanitizeVal(d.letak_mesin),
+    tanggal_email_permintaan: sanitizeVal(d.tanggal_email_permintaan),
     koordinat_text: d.koordinat ? `${d.koordinat.lat}, ${d.koordinat.lng}` : '-',
 
     // Penandatangan
-    yang_melakukan: sanitizeVal(d.yang_melakukan || d.teknisi || report.teknisi) === '-' ? 'Budi Santoso' : (d.yang_melakukan || d.teknisi || report.teknisi),
-    mengetahui: sanitizeVal(d.mengetahui) === '-' ? 'Ahmad Fauzi' : d.mengetahui,
-    penandatangan_vendor: sanitizeVal(d.penandatangan_vendor) === '-' ? 'Purwanto' : d.penandatangan_vendor,
+    yang_melakukan: sanitizeVal(d.yang_melakukan || d.teknisi || report.teknisi),
+    mengetahui: sanitizeVal(d.mengetahui),
+    penandatangan_vendor: sanitizeVal(d.penandatangan_vendor),
 
     // BA Dynabolt
-    type_mesin_lama: sanitizeVal(d.type_mesin_lama) === '-' ? 'Diebold 5500' : d.type_mesin_lama,
-    sn_mesin_lama: sanitizeVal(d.sn_mesin_lama) === '-' ? 'DB-123456' : d.sn_mesin_lama,
+    type_mesin_lama: sanitizeVal(d.type_mesin_lama),
+    sn_mesin_lama: sanitizeVal(d.sn_mesin_lama),
     keterangan_vendor: sanitizeVal(d.keterangan_vendor),
   };
 
@@ -116,4 +116,3 @@ export function buildDocumentData(
 
   return data;
 }
-
