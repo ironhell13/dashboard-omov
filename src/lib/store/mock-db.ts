@@ -202,6 +202,12 @@ export const db = {
     if (status) rep.status = status as any;
     return rep;
   },
+  deleteReport: (id: string) => {
+    const idx = mockReports.findIndex(r => r.id === id);
+    if (idx === -1) return false;
+    mockReports.splice(idx, 1);
+    return true;
+  },
 
   // Masters
   getVendors: () => [...mockVendors],

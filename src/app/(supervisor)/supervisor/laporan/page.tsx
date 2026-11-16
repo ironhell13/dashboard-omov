@@ -10,7 +10,8 @@ import {
   ExternalLink,
   Calendar,
   FileText,
-  Download
+  Download,
+  Trash2
 } from 'lucide-react';
 import { formatTanggalIndonesia, getStatusBadgeConfig } from '@/lib/utils';
 import { Report, ReportStatus, JenisPekerjaan } from '@/types/database';
@@ -25,6 +26,7 @@ export default function SupervisorLaporanPage() {
   const [tanggalFilter, setTanggalFilter] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   const fetchReports = async () => {
     setIsLoading(true);
@@ -53,6 +55,28 @@ export default function SupervisorLaporanPage() {
 
   const handleCreated = (newReport: Report) => {
     setReports((prev) => [newReport, ...prev]);
+  };
+
+  const handleDeleteReport = async (id: string, wsid: string, lokasi: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus Berita Acara WSID ${wsid} (${lokasi})? Seluruh data dan foto terkait akan dihapus secara permanen.`)) {
+      return;
+    }
+    setIsDeletingId(id);
+    try {
+      const res = await fetch(`/api/reports/${id}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        setReports((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        alert(`Gagal menghapus laporan: ${json.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   return (
@@ -211,13 +235,23 @@ export default function SupervisorLaporanPage() {
                       {rep.teknisi || rep.data?.teknisi || rep.data?.yang_melakukan || '-'}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <Link
-                        href={`/supervisor/laporan/${rep.id}`}
-                        className="btn-secondary h-8 px-3 text-xs inline-flex items-center gap-1.5"
-                      >
-                        <span>Kelola</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/supervisor/laporan/${rep.id}`}
+                          className="btn-secondary h-8 px-3 text-xs inline-flex items-center gap-1.5"
+                        >
+                          <span>Kelola</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteReport(rep.id, rep.wsid, rep.lokasi)}
+                          disabled={isDeletingId === rep.id}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-btn border border-border bg-white text-text-muted hover:text-danger hover:border-danger/30 hover:bg-status-danger-bg/40 transition-colors"
+                          title={`Hapus Laporan WSID ${rep.wsid}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

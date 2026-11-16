@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
   Save, 
@@ -17,7 +18,11 @@ import {
   MapPin, 
   RefreshCw,
   ExternalLink,
-  Clock
+  Clock,
+  Trash2,
+  CheckCheck,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { PHOTO_SLOTS, GROUPS } from '@/types/slot';
 import { formatTanggalIndonesia, formatTanggalJamWIB, getStatusBadgeConfig } from '@/lib/utils';
@@ -29,6 +34,7 @@ export default function SupervisorDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [report, setReport] = useState<Report | null>(null);
   const [activeTab, setActiveTab] = useState<'data' | 'foto' | 'dokumen'>('data');
   const [activeDataSection, setActiveDataSection] = useState('identitas');
@@ -42,7 +48,14 @@ export default function SupervisorDetailPage({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isDeletingReport, setIsDeletingReport] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Batch review & checklist state
+  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const [isBatchReviewing, setIsBatchReviewing] = useState(false);
+  const [isBatchRejectModalOpen, setIsBatchRejectModalOpen] = useState(false);
+  const [batchRejectNote, setBatchRejectNote] = useState('');
 
   const fetchReport = () => {
     fetch(`/api/reports/${id}`)
@@ -68,6 +81,10 @@ export default function SupervisorDetailPage({
           });
           setPhotosMap(map);
           setPhotoReviews(revMap);
+
+          // Auto-centang seluruh slot yang fotonya sudah terunggah
+          const uploadedSlots = PHOTO_SLOTS.filter((s) => !!map[s.reuse_of || s.key]).map((s) => s.key);
+          setSelectedSlots(uploadedSlots);
         }
       });
   };
@@ -142,6 +159,136 @@ export default function SupervisorDetailPage({
     } finally {
       setRejectDialogSlot(null);
       setRejectNote('');
+    }
+  };
+
+  const handleSelectAll = () => {
+    const uploadedKeys = PHOTO_SLOTS.filter((s) => !!photosMap[s.reuse_of || s.key]).map((s) => s.key);
+    if (selectedSlots.length === uploadedKeys.length && uploadedKeys.length > 0) {
+      setSelectedSlots([]);
+    } else {
+      setSelectedSlots(uploadedKeys);
+    }
+  };
+
+  const toggleSlotSelected = (slotKey: string) => {
+    setSelectedSlots((prev) =>
+      prev.includes(slotKey)
+        ? prev.filter((k) => k !== slotKey)
+        : [...prev, slotKey]
+    );
+  };
+
+  const handleBatchApprove = async () => {
+    if (selectedSlots.length === 0) {
+      alert('Silakan centang setidaknya satu foto untuk diterima.');
+      return;
+    }
+    setIsBatchReviewing(true);
+    setActionMessage(null);
+    try {
+      const res = await fetch('/api/photos/review', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportId: id,
+          slotKeys: selectedSlots,
+          review: 'diterima',
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setPhotoReviews((prev) => {
+          const next = { ...prev };
+          selectedSlots.forEach((k) => {
+            next[k] = { status: 'diterima' };
+          });
+          return next;
+        });
+        fetchReport();
+        setActionMessage({
+          type: 'success',
+          text: `Berhasil menerima ${selectedSlots.length} foto sekaligus!`,
+        });
+      } else {
+        alert(`Gagal menerima foto: ${json.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsBatchReviewing(false);
+    }
+  };
+
+  const handleBatchReject = async () => {
+    if (!batchRejectNote.trim()) {
+      alert('Catatan penolakan wajib diisi.');
+      return;
+    }
+    setIsBatchReviewing(true);
+    setActionMessage(null);
+    try {
+      const res = await fetch('/api/photos/review', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportId: id,
+          slotKeys: selectedSlots,
+          review: 'ditolak',
+          note: batchRejectNote.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setPhotoReviews((prev) => {
+          const next = { ...prev };
+          selectedSlots.forEach((k) => {
+            next[k] = { status: 'ditolak', note: batchRejectNote.trim() };
+          });
+          return next;
+        });
+        fetchReport();
+        setIsBatchRejectModalOpen(false);
+        setBatchRejectNote('');
+        setActionMessage({
+          type: 'error',
+          text: `${selectedSlots.length} foto ditolak. Status laporan kini Perlu Perbaikan.`,
+        });
+      } else {
+        alert(`Gagal menolak foto: ${json.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsBatchReviewing(false);
+    }
+  };
+
+  const handleDeleteThisReport = async () => {
+    if (!report) return;
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin menghapus Berita Acara WSID ${report.wsid} (${report.lokasi})? Seluruh foto dan data laporan akan dihapus secara permanen.`
+      )
+    ) {
+      return;
+    }
+
+    setIsDeletingReport(true);
+    try {
+      const res = await fetch(`/api/reports/${id}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        router.push('/supervisor/laporan');
+      } else {
+        alert(`Gagal menghapus laporan: ${json.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsDeletingReport(false);
     }
   };
 
@@ -268,8 +415,8 @@ export default function SupervisorDetailPage({
           </div>
         </div>
 
-        {/* Autosave Status Indicator */}
-        <div className="flex items-center gap-2">
+        {/* Header Actions: Autosave & Hapus Laporan */}
+        <div className="flex items-center gap-3">
           {saveStatus === 'saving' && (
             <span className="flex items-center gap-1.5 text-xs text-text-muted">
               <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
@@ -282,6 +429,16 @@ export default function SupervisorDetailPage({
               <span>Tersimpan otomatis</span>
             </span>
           )}
+
+          <button
+            onClick={handleDeleteThisReport}
+            disabled={isDeletingReport}
+            className="btn-secondary h-8 px-2.5 text-xs text-danger hover:bg-status-danger-bg hover:border-danger/30 inline-flex items-center gap-1.5 transition-colors"
+            title="Hapus laporan ini secara permanen"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Hapus Laporan</span>
+          </button>
         </div>
       </div>
 
@@ -809,18 +966,68 @@ export default function SupervisorDetailPage({
       {/* TAB 2: REVIEW FOTO (34 SLOT) */}
       {activeTab === 'foto' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-white rounded-card border border-border">
+          {/* Bulk Review Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-white rounded-card border border-border gap-3">
             <div>
               <h2 className="text-sm font-bold text-text">
                 Kisi Peninjauan 34 Slot Foto
               </h2>
               <p className="text-xs text-text-muted mt-0.5">
-                Periksa kesesuaian rasio, ketajaman angka multimeter, dan nomor seri
+                Centang foto untuk menerima atau menolak secara massal tanpa harus satu per satu
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-primary bg-bg-tint px-3 py-1.5 rounded-full">
-                {Object.keys(photosMap).length} / 34 Slot Terunggah
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleSelectAll}
+                className="btn-secondary h-8 px-2.5 text-xs gap-1.5 font-medium"
+                title="Centang semua atau lepas centang semua foto yang terunggah"
+              >
+                {selectedSlots.length > 0 &&
+                selectedSlots.length ===
+                  PHOTO_SLOTS.filter((s) => !!photosMap[s.reuse_of || s.key]).length ? (
+                  <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                ) : (
+                  <Square className="w-3.5 h-3.5 text-text-muted" />
+                )}
+                <span>
+                  {selectedSlots.length > 0 &&
+                  selectedSlots.length ===
+                    PHOTO_SLOTS.filter((s) => !!photosMap[s.reuse_of || s.key]).length
+                    ? 'Lepas Semua'
+                    : 'Centang Semua'}
+                </span>
+              </button>
+
+              <button
+                onClick={handleBatchApprove}
+                disabled={isBatchReviewing || selectedSlots.length === 0}
+                className="btn-primary h-8 px-3 text-xs gap-1.5 font-semibold bg-[#17714A] hover:bg-[#125B3B] text-white border-transparent"
+                title="Terima semua foto yang dicentang sekaligus"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>
+                  {isBatchReviewing ? 'Menyimpan...' : `Terima (${selectedSlots.length}) Foto`}
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (selectedSlots.length === 0) {
+                    alert('Silakan centang setidaknya satu foto yang ingin ditolak.');
+                    return;
+                  }
+                  setIsBatchRejectModalOpen(true);
+                }}
+                disabled={isBatchReviewing || selectedSlots.length === 0}
+                className="btn-secondary h-8 px-3 text-xs gap-1.5 font-semibold text-danger hover:bg-status-danger-bg border-border"
+                title="Tolak foto yang dicentang dan kirim instruksi perbaikan"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Tolak ({selectedSlots.length})</span>
+              </button>
+
+              <span className="text-xs font-semibold text-primary bg-bg-tint px-3 py-1.5 rounded-full ml-1">
+                {PHOTO_SLOTS.filter((s) => !!photosMap[s.reuse_of || s.key]).length} / 34 Slot Terunggah
               </span>
             </div>
           </div>
@@ -841,6 +1048,8 @@ export default function SupervisorDetailPage({
                     const review = photoReviews[slot.key] || (photo ? { status: photo.review, note: photo.review_note } : undefined);
                     const isRejected = review?.status === 'ditolak';
                     const isAccepted = review?.status === 'diterima';
+                    const isSelected = selectedSlots.includes(slot.key);
+                    const hasPhoto = !!photo;
 
                     return (
                       <div
@@ -850,9 +1059,28 @@ export default function SupervisorDetailPage({
                             ? 'border-status-danger-text bg-status-danger-bg/20'
                             : isAccepted
                             ? 'border-status-success-text bg-status-success-bg/20'
+                            : isSelected
+                            ? 'border-primary/40 bg-bg-tint/30'
                             : 'border-border'
                         }`}
                       >
+                        {/* Checkbox & Slot Index Header */}
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={!hasPhoto}
+                              onChange={() => toggleSlotSelected(slot.key)}
+                              className="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-30"
+                            />
+                            <span className="text-[10px] text-text font-bold">#{slot.sort}</span>
+                          </label>
+                          {slot.reuse_of && (
+                            <span className="text-[9px] font-medium text-primary bg-bg-tint px-1 rounded">Reuse</span>
+                          )}
+                        </div>
+
                         {/* Thumbnail Container */}
                         <div className="relative aspect-4/3 w-full bg-bg-subtle rounded-md flex flex-col items-center justify-center border border-border overflow-hidden group">
                           {photo?.thumbBase64 ? (
@@ -1171,6 +1399,46 @@ export default function SupervisorDetailPage({
                 className="btn-primary h-8 px-3 text-xs bg-status-danger-text hover:bg-red-700"
               >
                 Kirim Penolakan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Catatan Penolakan Foto Massal (Batch Reject) */}
+      {isBatchRejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white rounded-card border border-border shadow-card p-5 animate-in fade-in zoom-in-95">
+            <h3 className="text-sm font-semibold text-text mb-1">
+              Tolak {selectedSlots.length} Foto Terpilih
+            </h3>
+            <p className="text-xs text-text-muted mb-3">
+              Masukkan alasan perbaikan untuk seluruh foto yang ditolak
+            </p>
+            <textarea
+              rows={3}
+              required
+              value={batchRejectNote}
+              onChange={(e) => setBatchRejectNote(e.target.value)}
+              placeholder="Contoh: Foto buram atau sudut pengambilan tidak tepat, mohon foto ulang..."
+              className="w-full text-xs border border-border-strong rounded-input p-2.5 outline-none focus:border-primary text-text"
+            />
+            <div className="flex items-center justify-end gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setIsBatchRejectModalOpen(false);
+                  setBatchRejectNote('');
+                }}
+                className="btn-secondary h-8 px-3 text-xs"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleBatchReject}
+                disabled={!batchRejectNote.trim() || isBatchReviewing}
+                className="btn-primary h-8 px-3 text-xs bg-status-danger-text hover:bg-red-700"
+              >
+                {isBatchReviewing ? 'Memproses...' : `Tolak (${selectedSlots.length}) Foto`}
               </button>
             </div>
           </div>

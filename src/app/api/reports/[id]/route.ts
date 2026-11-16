@@ -43,3 +43,29 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const deleted = db.deleteReport(id);
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, error: 'Laporan tidak ditemukan' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Laporan berhasil dihapus',
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+

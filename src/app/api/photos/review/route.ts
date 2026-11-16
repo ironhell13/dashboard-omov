@@ -6,11 +6,17 @@ import { PHOTO_SLOTS } from '@/types/slot';
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { reportId, slotKey, review, note } = body;
+    const { reportId, slotKey, slotKeys: rawSlotKeys, review, note } = body;
 
-    if (!reportId || !slotKey || !review) {
+    const keysToProcess: string[] = Array.isArray(rawSlotKeys)
+      ? rawSlotKeys
+      : slotKey
+      ? [slotKey]
+      : [];
+
+    if (!reportId || keysToProcess.length === 0 || !review) {
       return NextResponse.json(
-        { success: false, error: 'reportId, slotKey, dan review wajib diisi' },
+        { success: false, error: 'reportId, slotKey/slotKeys, dan review wajib diisi' },
         { status: 400 }
       );
     }
@@ -29,27 +35,26 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const key = `${reportId}_${slotKey}`;
-    let photo = photoStore.get(key);
+    for (const sKey of keysToProcess) {
+      const key = `${reportId}_${sKey}`;
+      let photo = photoStore.get(key);
 
-    if (!photo) {
-      // Jika belum ada di store (misal slot tersimulasi), buat entri
-      photo = {
-        slotKey,
-        bytes: 150000,
-        width: 1280,
-        height: 960,
-        source: 'kamera',
-        uploadedAt: new Date().toISOString(),
-        review: 'menunggu',
-      };
+      if (!photo) {
+        photo = {
+          slotKey: sKey,
+          bytes: 150000,
+          width: 1280,
+          height: 960,
+          source: 'kamera',
+          uploadedAt: new Date().toISOString(),
+          review: 'menunggu',
+        };
+      }
+
+      photo.review = review;
+      photo.review_note = review === 'ditolak' ? note.trim() : undefined;
       photoStore.set(key, photo);
     }
-
-    // Perbarui status review
-    photo.review = review;
-    photo.review_note = review === 'ditolak' ? note.trim() : undefined;
-    photoStore.set(key, photo);
 
     // Dapatkan data laporan saat ini
     const report = db.getReportById(reportId);
@@ -64,17 +69,10 @@ export async function PATCH(request: Request) {
         let approvedCount = 0;
 
         PHOTO_SLOTS.forEach((slot) => {
-          if (slot.reuse_of) {
-            // Mengikuti slot sumber
-            const sourceKey = `${reportId}_${slot.reuse_of}`;
-            const sourceP = photoStore.get(sourceKey);
-            if (sourceP?.review === 'diterima') approvedCount++;
-            if (sourceP?.review === 'ditolak') hasRejected = true;
-          } else {
-            const p = photoStore.get(`${reportId}_${slot.key}`);
-            if (p?.review === 'diterima') approvedCount++;
-            if (p?.review === 'ditolak') hasRejected = true;
-          }
+          const targetSlot = slot.reuse_of || slot.key;
+          const p = photoStore.get(`${reportId}_${targetSlot}`);
+          if (p?.review === 'diterima') approvedCount++;
+          if (p?.review === 'ditolak') hasRejected = true;
         });
 
         if (!hasRejected && approvedCount >= 34) {
@@ -86,9 +84,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        slotKey,
-        review: photo.review,
-        review_note: photo.review_note,
+        processedCount: keysToProcess.length,
+        slotKeys: keysToProcess,
+        review,
+        note: review === 'ditolak' ? note.trim() : undefined,
       },
     });
   } catch (error: any) {
