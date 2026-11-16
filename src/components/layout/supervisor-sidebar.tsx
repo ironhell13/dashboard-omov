@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -16,18 +17,33 @@ import { cn } from '@/lib/utils';
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  userRole?: string;
 }
 
-const MENU_ITEMS = [
+const ALL_MENU_ITEMS = [
   { href: '/supervisor', label: 'Beranda', icon: LayoutDashboard },
   { href: '/supervisor/laporan', label: 'Laporan', icon: FileText },
-  { href: '/supervisor/pengguna', label: 'Pengguna', icon: Users },
   { href: '/supervisor/master', label: 'Master Data', icon: Database },
-  { href: '/supervisor/pengaturan/drive', label: 'Google Drive', icon: Settings },
+  { href: '/supervisor/pengguna', label: 'Pengguna', icon: Users, superadminOnly: true },
+  { href: '/supervisor/pengaturan/drive', label: 'Google Drive', icon: Settings, superadminOnly: true },
 ];
 
-export function SupervisorSidebar({ isOpen, onClose }: SidebarProps) {
+export function SupervisorSidebar({ isOpen, onClose, userRole }: SidebarProps) {
   const pathname = usePathname();
+  const [activeRole, setActiveRole] = useState(userRole || 'supervisor');
+
+  useEffect(() => {
+    if (userRole) {
+      setActiveRole(userRole);
+    } else {
+      const match = document.cookie.match(/omov_role=([^;]+)/);
+      if (match) setActiveRole(match[1]);
+    }
+  }, [userRole]);
+
+  const visibleMenuItems = ALL_MENU_ITEMS.filter(
+    (item) => !item.superadminOnly || activeRole === 'superadmin'
+  );
 
   return (
     <>
@@ -75,7 +91,7 @@ export function SupervisorSidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Navigation Items */}
         <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-          {MENU_ITEMS.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== '/supervisor' && pathname.startsWith(item.href));
 

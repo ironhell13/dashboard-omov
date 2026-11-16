@@ -1,6 +1,10 @@
 -- Migrasi 2: RLS, View, dan Fungsi RPC
 -- Mengikuti Dokumen SPEC.md Bagian A.6
 
+-- Pastikan constraint role mendukung superadmin, supervisor, lapangan
+alter table if exists profiles drop constraint if exists profiles_role_check;
+alter table if exists profiles add constraint profiles_role_check check (role in ('superadmin', 'supervisor', 'lapangan'));
+
 -- Helper function: Mendapatkan role pengguna saat ini
 create or replace function current_user_role()
 returns text as $$
@@ -78,7 +82,7 @@ begin
   set claimed_by = null,
       claimed_at = null
   where id = p_report_id
-    and (claimed_by = auth.uid() or current_user_role() = 'supervisor');
+    and (claimed_by = auth.uid() or current_user_role() in ('superadmin', 'supervisor'));
 end;
 $$ language plpgsql security definer;
 
@@ -93,10 +97,11 @@ alter table master_orang enable row level security;
 alter table activity_log enable row level security;
 
 -- 4. Kebijakan RLS: PROFILES
+-- Superadmin: Kelola akun & profil penuh
 drop policy if exists "Profiles: supervisor full access" on profiles;
 create policy "Profiles: supervisor full access"
   on profiles for all
-  using (current_user_role() = 'supervisor');
+  using (current_user_role() in ('superadmin', 'supervisor'));
 
 drop policy if exists "Profiles: read for authenticated users" on profiles;
 create policy "Profiles: read for authenticated users"
@@ -104,11 +109,11 @@ create policy "Profiles: read for authenticated users"
   using (auth.role() = 'authenticated');
 
 -- 5. Kebijakan RLS: REPORTS
--- Supervisor: Akses Penuh
+-- Superadmin & Supervisor: Akses Penuh
 drop policy if exists "Reports: supervisor full access" on reports;
 create policy "Reports: supervisor full access"
   on reports for all
-  using (current_user_role() = 'supervisor');
+  using (current_user_role() in ('superadmin', 'supervisor'));
 
 -- Lapangan / Publik: Hanya bisa membaca laporan aktif yang tidak berstatus final/terarsip/dibatalkan
 -- Catatan: Tim lapangan tidak perlu login (anon dapat mengakses laporan aktif)
@@ -127,18 +132,18 @@ create policy "Photo slots: read for authenticated users"
   on photo_slots for select
   using (auth.role() in ('authenticated', 'anon'));
 
--- Supervisor dapat mengubah slot
+-- Supervisor & Superadmin dapat mengubah slot
 drop policy if exists "Photo slots: supervisor manage" on photo_slots;
 create policy "Photo slots: supervisor manage"
   on photo_slots for all
-  using (current_user_role() = 'supervisor');
+  using (current_user_role() in ('superadmin', 'supervisor'));
 
 -- 7. Kebijakan RLS: REPORT_PHOTOS
--- Supervisor: Akses Penuh
+-- Superadmin & Supervisor: Akses Penuh
 drop policy if exists "Report photos: supervisor full access" on report_photos;
 create policy "Report photos: supervisor full access"
   on report_photos for all
-  using (current_user_role() = 'supervisor');
+  using (current_user_role() in ('superadmin', 'supervisor'));
 
 -- Lapangan / Publik: SELECT foto hanya untuk laporan aktif (tidak final/terarsip)
 drop policy if exists "Report photos: lapangan select active" on report_photos;
@@ -185,25 +190,25 @@ grant select, insert, update on report_photos to anon, authenticated;
 grant select on reports to anon, authenticated;
 
 -- 8. Kebijakan RLS: MASTER TABLES
--- Baca untuk semua pengguna terautentikasi, kelola untuk supervisor
+-- Baca untuk semua pengguna terautentikasi, kelola untuk supervisor/superadmin
 drop policy if exists "Master vendor: read for authenticated" on master_vendor;
 create policy "Master vendor: read for authenticated" on master_vendor for select using (auth.role() = 'authenticated');
 drop policy if exists "Master vendor: supervisor manage" on master_vendor;
-create policy "Master vendor: supervisor manage" on master_vendor for all using (current_user_role() = 'supervisor');
+create policy "Master vendor: supervisor manage" on master_vendor for all using (current_user_role() in ('superadmin', 'supervisor'));
 
 drop policy if exists "Master mesin: read for authenticated" on master_mesin;
 create policy "Master mesin: read for authenticated" on master_mesin for select using (auth.role() = 'authenticated');
 drop policy if exists "Master mesin: supervisor manage" on master_mesin;
-create policy "Master mesin: supervisor manage" on master_mesin for all using (current_user_role() = 'supervisor');
+create policy "Master mesin: supervisor manage" on master_mesin for all using (current_user_role() in ('superadmin', 'supervisor'));
 
 drop policy if exists "Master orang: read for authenticated" on master_orang;
 create policy "Master orang: read for authenticated" on master_orang for select using (auth.role() = 'authenticated');
 drop policy if exists "Master orang: supervisor manage" on master_orang;
-create policy "Master orang: supervisor manage" on master_orang for all using (current_user_role() = 'supervisor');
+create policy "Master orang: supervisor manage" on master_orang for all using (current_user_role() in ('superadmin', 'supervisor'));
 
 -- 9. Kebijakan RLS: ACTIVITY_LOG
 drop policy if exists "Activity log: read for supervisor" on activity_log;
-create policy "Activity log: read for supervisor" on activity_log for select using (current_user_role() = 'supervisor');
+create policy "Activity log: read for supervisor" on activity_log for select using (current_user_role() in ('superadmin', 'supervisor'));
 drop policy if exists "Activity log: insert for authenticated" on activity_log;
 create policy "Activity log: insert for authenticated" on activity_log for insert with check (auth.role() = 'authenticated');
 

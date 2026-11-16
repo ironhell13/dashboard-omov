@@ -158,6 +158,7 @@ let mockOrang: MasterOrang[] = [
 ];
 
 let mockUsers: UserAccount[] = [
+  { id: 'usr-0', nama: 'Super Administrator', email: 'admin@omov.com', role: 'superadmin', aktif: true, createdAt: '2026-11-01' },
   { id: 'usr-1', nama: 'Budi Santoso', email: 'budi.santoso@omov.com', role: 'supervisor', aktif: true, createdAt: '2026-11-01' },
   { id: 'usr-2', nama: 'Ahmad Fauzi', email: 'ahmad.fauzi@omov.com', role: 'lapangan', aktif: true, createdAt: '2026-11-01' },
   { id: 'usr-3', nama: 'Bambang Irawan', email: 'bambang.irawan@omov.com', role: 'lapangan', aktif: true, createdAt: '2026-11-05' },

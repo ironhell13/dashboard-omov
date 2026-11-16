@@ -22,7 +22,10 @@ export default function LoginPage() {
       let role = 'supervisor';
       let name = 'Budi Santoso';
 
-      if (email.toLowerCase().includes('lapangan')) {
+      if (email.toLowerCase().includes('admin') || email.toLowerCase().includes('super')) {
+        role = 'superadmin';
+        name = 'Super Administrator';
+      } else if (email.toLowerCase().includes('lapangan')) {
         role = 'lapangan';
         name = 'Ahmad Fauzi';
       }
@@ -32,7 +35,7 @@ export default function LoginPage() {
       document.cookie = `omov_name=${encodeURIComponent(name)}; path=/; max-age=86400; SameSite=Lax`;
 
       // Redirect sesuai role
-      if (role === 'supervisor') {
+      if (role === 'superadmin' || role === 'supervisor') {
         router.push('/supervisor');
       } else {
         router.push('/lapangan');
@@ -76,9 +79,17 @@ export default function LoginPage() {
         <h2 className="text-lg font-semibold text-text mb-1">
           Masuk ke Akun
         </h2>
-        <p className="text-xs text-text-muted mb-6">
-          Gunakan email dan kata sandi yang telah didaftarkan supervisor
+        <p className="text-xs text-text-muted mb-4">
+          Gunakan akun Superadmin atau Supervisor Anda
         </p>
+
+        <div className="text-[11px] text-text-muted mb-4 bg-bg-subtle p-2.5 rounded-btn border border-border">
+          <span className="font-semibold text-text block mb-0.5">Akun Demo Cepat:</span>
+          <div className="flex flex-col gap-0.5">
+            <span>&bull; <strong>admin@omov.com</strong> (Superadmin - Semua Menu)</span>
+            <span>&bull; <strong>supervisor@omov.com</strong> (Supervisor - Tanpa Menu Pengguna/Drive)</span>
+          </div>
+        </div>
 
         {errorMessage && (
           <div className="mb-4 p-3 rounded-input bg-status-danger-bg text-status-danger-text text-xs border border-red-200">

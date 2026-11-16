@@ -8,10 +8,13 @@ create extension if not exists "pgcrypto";
 create table if not exists profiles (
   id uuid primary key references auth.users on delete cascade,
   nama text not null,
-  role text not null check (role in ('supervisor', 'lapangan')),
+  role text not null check (role in ('superadmin', 'supervisor', 'lapangan')),
   aktif boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table if exists profiles drop constraint if exists profiles_role_check;
+alter table if exists profiles add constraint profiles_role_check check (role in ('superadmin', 'supervisor', 'lapangan'));
 
 -- 2. Tabel Laporan (Reports)
 create table if not exists reports (

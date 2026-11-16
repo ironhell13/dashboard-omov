@@ -15,13 +15,13 @@ on conflict (id) do update set
   file_size_limit = 10485760,
   allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
 
--- 2. Kebijakan Storage: Supervisor Full Access
+-- 2. Kebijakan Storage: Supervisor & Superadmin Full Access
 drop policy if exists "Storage: supervisor full access" on storage.objects;
 create policy "Storage: supervisor full access"
   on storage.objects for all
   using (
     bucket_id = 'laporan-foto'
-    and current_user_role() = 'supervisor'
+    and current_user_role() in ('superadmin', 'supervisor')
   );
 
 -- 3. Kebijakan Storage: Lapangan / Anon SELECT (hanya laporan aktif)

@@ -1,4 +1,4 @@
-export type UserRole = 'supervisor' | 'lapangan';
+export type UserRole = 'superadmin' | 'supervisor' | 'lapangan';
 
 export type ReportStatus =
   | 'menunggu_foto'

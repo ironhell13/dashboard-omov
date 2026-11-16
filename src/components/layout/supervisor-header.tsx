@@ -5,10 +5,15 @@ import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   userName?: string;
+  userRole?: string;
   onOpenSidebar: () => void;
 }
 
-export function SupervisorHeader({ userName = 'Supervisor', onOpenSidebar }: HeaderProps) {
+export function SupervisorHeader({ 
+  userName = 'Supervisor', 
+  userRole = 'supervisor',
+  onOpenSidebar 
+}: HeaderProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -18,6 +23,8 @@ export function SupervisorHeader({ userName = 'Supervisor', onOpenSidebar }: Hea
     router.push('/login');
     router.refresh();
   };
+
+  const isSuperadmin = userRole === 'superadmin';
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-8 bg-white border-b border-border">
@@ -41,8 +48,8 @@ export function SupervisorHeader({ userName = 'Supervisor', onOpenSidebar }: Hea
             <span className="block text-sm font-medium text-text leading-tight">
               {userName}
             </span>
-            <span className="block text-[11px] text-primary font-medium leading-none">
-              Supervisor
+            <span className={`block text-[11px] font-semibold leading-none ${isSuperadmin ? 'text-amber-600' : 'text-primary'}`}>
+              {isSuperadmin ? 'Superadmin' : 'Supervisor'}
             </span>
           </div>
         </div>

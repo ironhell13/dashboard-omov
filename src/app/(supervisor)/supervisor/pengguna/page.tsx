@@ -117,18 +117,22 @@ export default function PenggunaPage() {
                 <td className="px-5 py-4 text-text-muted text-xs">{u.email}</td>
                 <td className="px-5 py-4">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      u.role === 'supervisor'
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      u.role === 'superadmin'
+                        ? 'bg-[#FFF3DC] text-[#8A5300] border border-amber-200'
+                        : u.role === 'supervisor'
                         ? 'bg-[#DCEBFF] text-primary'
                         : 'bg-bg-subtle text-text-muted border border-border'
                     }`}
                   >
-                    {u.role === 'supervisor' ? (
+                    {u.role === 'superadmin' ? (
+                      <ShieldAlert className="w-3 h-3 text-amber-600" />
+                    ) : u.role === 'supervisor' ? (
                       <Shield className="w-3 h-3" />
                     ) : (
                       <HardHat className="w-3 h-3" />
                     )}
-                    <span className="capitalize">{u.role}</span>
+                    <span className="capitalize">{u.role === 'superadmin' ? 'Superadmin' : u.role}</span>
                   </span>
                 </td>
                 <td className="px-5 py-4">
@@ -228,8 +232,9 @@ export default function PenggunaPage() {
                   onChange={(e) => setRole(e.target.value as UserRole)}
                   className="form-input"
                 >
+                  <option value="superadmin">Superadmin (Akses Penuh Semua Menu)</option>
+                  <option value="supervisor">Supervisor (Laporan & Master Data)</option>
                   <option value="lapangan">Tim Lapangan (Akses Foto Saja)</option>
-                  <option value="supervisor">Supervisor (Akses Penuh)</option>
                 </select>
               </div>
 
