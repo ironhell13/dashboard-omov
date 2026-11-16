@@ -13,6 +13,7 @@ export default function PenggunaPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('lapangan');
   const [isLoading, setIsLoading] = useState(false);
+  const [dialogError, setDialogError] = useState('');
 
   const fetchUsers = async () => {
     try {
@@ -33,13 +34,23 @@ export default function PenggunaPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nama.trim() || !email.trim()) return;
+    if (password.trim().length < 8) {
+      setDialogError('Kata sandi awal minimal 8 karakter');
+      return;
+    }
 
     setIsLoading(true);
+    setDialogError('');
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nama: nama.trim(), email: email.trim(), role }),
+        body: JSON.stringify({
+          nama: nama.trim(),
+          email: email.trim(),
+          password: password.trim(),
+          role,
+        }),
       });
       const json = await res.json();
       if (json.success) {
@@ -48,9 +59,11 @@ export default function PenggunaPage() {
         setEmail('');
         setPassword('');
         fetchUsers();
+      } else {
+        setDialogError(json.error || 'Gagal menambahkan akun');
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setDialogError(e.message || 'Terjadi kesalahan sistem');
     } finally {
       setIsLoading(false);
     }
@@ -179,6 +192,12 @@ export default function PenggunaPage() {
             <p className="text-xs text-text-muted mb-4">
               Akun akan langsung aktif tanpa memerlukan konfirmasi email
             </p>
+
+            {dialogError && (
+              <div className="mb-4 p-3 rounded-input bg-status-danger-bg text-status-danger-text text-xs border border-red-200">
+                {dialogError}
+              </div>
+            )}
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>

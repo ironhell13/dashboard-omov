@@ -15,6 +15,7 @@ create table if not exists profiles (
 
 alter table if exists profiles drop constraint if exists profiles_role_check;
 alter table if exists profiles add constraint profiles_role_check check (role in ('superadmin', 'supervisor', 'lapangan'));
+alter table if exists profiles add column if not exists email text;
 
 -- 2. Tabel Laporan (Reports)
 create table if not exists reports (

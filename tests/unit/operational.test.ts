@@ -245,5 +245,52 @@ describe('Tahap 5: Operasional & Integrasi Cloud (SPEC A.13 & A.14)', () => {
       expect(photoStore.has(`${rep2.id}_foto1`)).toBe(true);
     });
   });
+
+  describe('5. Autentikasi Kredensial & Role Superadmin (SPEC Security)', () => {
+    it('menolak login dengan password salah / sembarangan', async () => {
+      const { POST } = await import('@/app/api/auth/login/route');
+      const req = new Request('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'admin@omov.com', password: 'password_asal' }),
+      });
+
+      const res = await POST(req);
+      const json = await res.json();
+      expect(res.status).toBe(401);
+      expect(json.success).toBe(false);
+      expect(json.error).toContain('Kata sandi salah');
+    });
+
+    it('berhasil login ketika password valid sesuai role', async () => {
+      const { POST } = await import('@/app/api/auth/login/route');
+      const req = new Request('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'admin@omov.com', password: 'admin123' }),
+      });
+
+      const res = await POST(req);
+      const json = await res.json();
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.role).toBe('superadmin');
+    });
+
+    it('setup-admin menolak jika data tidak lengkap atau password kurang dari 8 karakter', async () => {
+      const { POST } = await import('@/app/api/auth/setup-admin/route');
+      const req = new Request('http://localhost:3000/api/auth/setup-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama: 'Admin', email: 'admin@omov.com', password: '123' }),
+      });
+
+      const res = await POST(req);
+      const json = await res.json();
+      expect(res.status).toBe(400);
+      expect(json.success).toBe(false);
+      expect(json.error).toContain('minimal 8 karakter');
+    });
+  });
 });
 
