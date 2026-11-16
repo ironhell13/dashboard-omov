@@ -233,28 +233,45 @@ export async function GET(request: Request) {
         .eq('report_id', reportId);
 
       if (!error && dbPhotos && dbPhotos.length > 0) {
-        const formatted = dbPhotos.map((p) => {
-          const { data: urlData } = adminClient.storage
-            .from('laporan-foto')
-            .getPublicUrl(p.storage_path);
+        const formatted = await Promise.all(
+          dbPhotos.map(async (p) => {
+            const proxyUrl = `/api/photos/view?reportId=${reportId}&slotKey=${p.slot_key}`;
+            let photoUrl = proxyUrl;
 
-          const thumbUrl = p.thumb_path
-            ? adminClient.storage.from('laporan-foto').getPublicUrl(p.thumb_path).data.publicUrl
-            : urlData?.publicUrl;
+            try {
+              const { data: signedData } = await adminClient.storage
+                .from('laporan-foto')
+                .createSignedUrl(p.storage_path, 86400 * 7);
 
-          return {
-            slotKey: p.slot_key,
-            bytes: p.bytes,
-            width: p.width,
-            height: p.height,
-            source: p.source,
-            uploadedAt: p.uploaded_at,
-            review: p.review,
-            review_note: p.review_note,
-            url: urlData?.publicUrl,
-            thumbBase64: thumbUrl,
-          };
-        });
+              if (signedData?.signedUrl) {
+                photoUrl = signedData.signedUrl;
+              } else {
+                const { data: urlData } = adminClient.storage
+                  .from('laporan-foto')
+                  .getPublicUrl(p.storage_path);
+                if (urlData?.publicUrl) {
+                  photoUrl = urlData.publicUrl;
+                }
+              }
+            } catch {
+              photoUrl = proxyUrl;
+            }
+
+            return {
+              slotKey: p.slot_key,
+              bytes: p.bytes,
+              width: p.width,
+              height: p.height,
+              source: p.source,
+              uploadedAt: p.uploaded_at,
+              review: p.review,
+              review_note: p.review_note,
+              url: photoUrl,
+              thumbBase64: photoUrl,
+              proxyUrl,
+            };
+          })
+        );
 
         return NextResponse.json({ success: true, photos: formatted });
       }
@@ -268,6 +285,8 @@ export async function GET(request: Request) {
   photoStore.forEach((val, key) => {
     if (key.startsWith(`${reportId}_`)) {
       const slotKey = key.replace(`${reportId}_`, '');
+      const proxyUrl = `/api/photos/view?reportId=${reportId}&slotKey=${slotKey}`;
+      const thumb = val.thumbBase64 || proxyUrl;
       photos.push({
         slotKey,
         bytes: val.bytes,
@@ -277,8 +296,9 @@ export async function GET(request: Request) {
         uploadedAt: val.uploadedAt,
         review: val.review,
         review_note: val.review_note,
-        url: val.thumbBase64 || '',
-        thumbBase64: val.thumbBase64,
+        url: thumb,
+        thumbBase64: thumb,
+        proxyUrl,
       });
     }
   });

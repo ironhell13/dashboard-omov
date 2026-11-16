@@ -19,7 +19,8 @@ import {
   FileText,
   Edit3,
   Save,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 import { PHOTO_SLOTS, GROUPS, PhotoSlot } from '@/types/slot';
 import { getStatusBadgeConfig } from '@/lib/utils';
@@ -44,6 +45,8 @@ export default function LapanganDetailPage({
   });
   const [claimed, setClaimed] = useState(true);
   const [uploadedSlots, setUploadedSlots] = useState<Set<string>>(new Set());
+  const [photosMap, setPhotosMap] = useState<Record<string, any>>({});
+  const [selectedPreviewPhoto, setSelectedPreviewPhoto] = useState<any | null>(null);
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
   const batchFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -69,6 +72,11 @@ export default function LapanganDetailPage({
         if (json.photos) {
           const keys = new Set<string>(json.photos.map((p: any) => p.slotKey));
           setUploadedSlots(keys);
+          const map: Record<string, any> = {};
+          json.photos.forEach((p: any) => {
+            map[p.slotKey] = p;
+          });
+          setPhotosMap(map);
         }
       });
   };
@@ -316,9 +324,11 @@ export default function LapanganDetailPage({
               {isOpen && (
                 <div className="p-3 divide-y divide-border space-y-3">
                   {groupSlots.map((slot) => {
+                    const actualSlotKey = slot.reuse_of || slot.key;
                     const isFilled = slot.reuse_of
                       ? uploadedSlots.has(slot.reuse_of)
                       : uploadedSlots.has(slot.key);
+                    const photo = photosMap[actualSlotKey];
 
                     return (
                       <div
@@ -327,9 +337,42 @@ export default function LapanganDetailPage({
                       >
                         {/* Left: Thumbnail & Details */}
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {/* Thumbnail / Ratio Icon */}
-                          <div className="w-12 h-12 rounded-input bg-bg-subtle border border-border flex flex-col items-center justify-center shrink-0 overflow-hidden relative">
-                            {isFilled ? (
+                          {/* Thumbnail / Ratio Icon with Preview trigger */}
+                          <div
+                            onClick={() => {
+                              if (isFilled && photo) {
+                                setSelectedPreviewPhoto({
+                                  ...photo,
+                                  label: slot.label,
+                                  slot,
+                                  previewUrl: photo.url || photo.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`,
+                                });
+                              }
+                            }}
+                            className={`w-13 h-13 rounded-input bg-bg-subtle border border-border flex flex-col items-center justify-center shrink-0 overflow-hidden relative select-none ${
+                              isFilled && photo ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 group' : ''
+                            }`}
+                            title={isFilled && photo ? 'Klik untuk memperbesar pratinjau foto' : undefined}
+                          >
+                            {isFilled && photo ? (
+                              <>
+                                <img
+                                  src={photo.thumbBase64 || photo.url || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`}
+                                  alt={slot.label}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    const fallback = `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`;
+                                    if (!target.src.includes('/api/photos/view')) {
+                                      target.src = fallback;
+                                    }
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                  <Eye className="w-4 h-4" />
+                                </div>
+                              </>
+                            ) : isFilled ? (
                               <CheckCircle2 className="w-6 h-6 text-status-success-text" />
                             ) : (
                               <>
@@ -357,7 +400,7 @@ export default function LapanganDetailPage({
                               {slot.label}
                             </h3>
 
-                            <div className="mt-1">
+                            <div className="mt-1 flex items-center gap-2">
                               {isFilled ? (
                                 <span className="inline-flex items-center gap-1 text-[10px] text-status-success-text font-semibold">
                                   <CheckCircle2 className="w-3 h-3" />
@@ -371,6 +414,22 @@ export default function LapanganDetailPage({
                                 <span className="text-[10px] text-text-muted">
                                   Belum ada foto
                                 </span>
+                              )}
+
+                              {isFilled && photo && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPreviewPhoto({
+                                    ...photo,
+                                    label: slot.label,
+                                    slot,
+                                    previewUrl: photo.url || photo.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`,
+                                  })}
+                                  className="text-[10px] text-primary hover:underline font-semibold flex items-center gap-0.5"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>Lihat</span>
+                                </button>
                               )}
                             </div>
                           </div>
@@ -557,6 +616,82 @@ export default function LapanganDetailPage({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Preview Foto untuk Tim Lapangan */}
+      {selectedPreviewPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-card border border-border shadow-card w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Header */}
+            <div className="p-3.5 border-b border-border flex items-center justify-between bg-bg-subtle">
+              <div className="min-w-0 pr-2">
+                <span className="text-[11px] font-bold text-primary block">
+                  #{selectedPreviewPhoto.slot?.sort} {selectedPreviewPhoto.slot?.grp}
+                </span>
+                <h3 className="text-sm font-bold text-text truncate">
+                  {selectedPreviewPhoto.label}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPreviewPhoto(null)}
+                className="p-1 rounded-md text-text-muted hover:text-text hover:bg-border/40 shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Photo Preview Container */}
+            <div className="p-3 bg-black/5 flex items-center justify-center overflow-auto flex-1 min-h-[260px] max-h-[60vh]">
+              <img
+                src={selectedPreviewPhoto.previewUrl || selectedPreviewPhoto.url || selectedPreviewPhoto.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${selectedPreviewPhoto.slotKey || selectedPreviewPhoto.slot?.key}`}
+                alt={selectedPreviewPhoto.label}
+                className="max-h-[55vh] w-auto max-w-full object-contain rounded border border-border shadow-xs"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  const slotKey = selectedPreviewPhoto.slotKey || selectedPreviewPhoto.slot?.key;
+                  const fallback = `/api/photos/view?reportId=${id}&slotKey=${slotKey}`;
+                  if (!target.src.includes('/api/photos/view')) {
+                    target.src = fallback;
+                  }
+                }}
+              />
+            </div>
+
+            {/* Meta & Footer Actions */}
+            <div className="p-3 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 bg-white text-xs">
+              <div className="text-[11px] text-text-muted">
+                <span>Rasio: {selectedPreviewPhoto.slot?.aspect_w}:{selectedPreviewPhoto.slot?.aspect_h}</span>
+                {selectedPreviewPhoto.bytes && (
+                  <span> &middot; {Math.round(selectedPreviewPhoto.bytes / 1024)} KB</span>
+                )}
+                {selectedPreviewPhoto.uploadedAt && (
+                  <span> &middot; {new Date(selectedPreviewPhoto.uploadedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 justify-end">
+                {!selectedPreviewPhoto.slot?.reuse_of && (
+                  <Link
+                    href={`/lapangan/${id}/foto/${selectedPreviewPhoto.slot?.key}?mode=kamera`}
+                    className="btn-primary h-8 px-3 text-xs font-semibold gap-1"
+                    onClick={() => setSelectedPreviewPhoto(null)}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Ambil Ulang</span>
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedPreviewPhoto(null)}
+                  className="btn-secondary h-8 px-3 text-xs font-medium"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

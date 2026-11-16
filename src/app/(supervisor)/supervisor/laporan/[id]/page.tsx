@@ -1227,12 +1227,19 @@ export default function SupervisorDetailPage({
 
                         {/* Thumbnail Container */}
                         <div className="relative aspect-4/3 w-full bg-bg-subtle rounded-md flex flex-col items-center justify-center border border-border overflow-hidden group">
-                          {photo?.thumbBase64 ? (
+                          {photo ? (
                             <img
-                              src={photo.thumbBase64}
+                              src={photo.thumbBase64 || photo.url || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`}
                               alt={slot.label}
                               className="w-full h-full object-cover cursor-pointer"
-                              onClick={() => setSelectedPreviewPhoto({ ...photo, label: slot.label, slot })}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                const fallback = `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}`;
+                                if (!target.src.includes('/api/photos/view')) {
+                                  target.src = fallback;
+                                }
+                              }}
+                              onClick={() => setSelectedPreviewPhoto({ ...photo, label: slot.label, slot, previewUrl: photo.url || photo.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}` })}
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center p-2 text-center">
@@ -1243,9 +1250,9 @@ export default function SupervisorDetailPage({
                             </div>
                           )}
 
-                          {photo?.thumbBase64 && (
+                          {photo && (
                             <button
-                              onClick={() => setSelectedPreviewPhoto({ ...photo, label: slot.label, slot })}
+                              onClick={() => setSelectedPreviewPhoto({ ...photo, label: slot.label, slot, previewUrl: photo.url || photo.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${actualSlotKey}` })}
                               className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white"
                               title="Perbesar foto"
                             >
@@ -1489,9 +1496,17 @@ export default function SupervisorDetailPage({
             </div>
             <div className="p-4 flex items-center justify-center overflow-auto bg-black/5">
               <img
-                src={selectedPreviewPhoto.thumbBase64}
+                src={selectedPreviewPhoto.previewUrl || selectedPreviewPhoto.url || selectedPreviewPhoto.thumbBase64 || `/api/photos/view?reportId=${id}&slotKey=${selectedPreviewPhoto.slotKey || selectedPreviewPhoto.slot?.key}`}
                 alt={selectedPreviewPhoto.label}
                 className="max-h-[60vh] object-contain rounded border border-border"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  const slotKey = selectedPreviewPhoto.slotKey || selectedPreviewPhoto.slot?.key;
+                  const fallback = `/api/photos/view?reportId=${id}&slotKey=${slotKey}`;
+                  if (!target.src.includes('/api/photos/view')) {
+                    target.src = fallback;
+                  }
+                }}
               />
             </div>
             <div className="p-3 border-t border-border flex items-center justify-between text-xs bg-white">
