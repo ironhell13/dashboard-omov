@@ -130,13 +130,63 @@ let mockOrang: MasterOrang[] = [
   { id: 4, nama: 'Eko Prasetyo', jabatan: 'Teknisi Lapangan' },
 ];
 
-let mockUsers: UserAccount[] = [
-  { id: 'usr-0', nama: 'Super Administrator', email: 'admin@omov.com', role: 'superadmin', aktif: true, createdAt: '2026-11-01' },
-  { id: 'usr-1', nama: 'Budi Santoso', email: 'budi.santoso@omov.com', role: 'supervisor', aktif: true, createdAt: '2026-11-01' },
-  { id: 'usr-2', nama: 'Ahmad Fauzi', email: 'ahmad.fauzi@omov.com', role: 'lapangan', aktif: true, createdAt: '2026-11-01' },
-  { id: 'usr-3', nama: 'Bambang Irawan', email: 'bambang.irawan@omov.com', role: 'lapangan', aktif: true, createdAt: '2026-11-05' },
-  { id: 'usr-4', nama: 'Eko Prasetyo', email: 'eko.prasetyo@omov.com', role: 'lapangan', aktif: true, createdAt: '2026-11-10' },
+function getUsersStorageFilePath(): string {
+  try {
+    const localDir = path.resolve(process.cwd(), '.data');
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    return path.join(localDir, 'users_store.json');
+  } catch {
+    return '/tmp/omov_users_store.json';
+  }
+}
+
+const defaultMockUsers: UserAccount[] = [
+  { id: 'usr-0', nama: 'Super Administrator', email: 'admin@omov.com', role: 'superadmin', password: 'admin123', aktif: true, createdAt: '2026-11-01' },
+  { id: 'usr-0b', nama: 'Supervisor Operasional', email: 'supervisor@omov.com', role: 'supervisor', password: 'supervisor123', aktif: true, createdAt: '2026-11-01' },
+  { id: 'usr-1', nama: 'Budi Santoso', email: 'budi.santoso@omov.com', role: 'supervisor', password: 'supervisor123', aktif: true, createdAt: '2026-11-01' },
+  { id: 'usr-2', nama: 'Ahmad Fauzi', email: 'ahmad.fauzi@omov.com', role: 'lapangan', password: 'Omov123!', aktif: true, createdAt: '2026-11-01' },
+  { id: 'usr-3', nama: 'Bambang Irawan', email: 'bambang.irawan@omov.com', role: 'lapangan', password: 'Omov123!', aktif: true, createdAt: '2026-11-05' },
+  { id: 'usr-4', nama: 'Eko Prasetyo', email: 'eko.prasetyo@omov.com', role: 'lapangan', password: 'Omov123!', aktif: true, createdAt: '2026-11-10' },
 ];
+
+function loadPersistedUsers(): UserAccount[] {
+  try {
+    const filePath = getUsersStorageFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const hasAdmin = parsed.some((u: UserAccount) => u.email.toLowerCase() === 'admin@omov.com');
+        const hasSupervisor = parsed.some((u: UserAccount) => u.email.toLowerCase() === 'supervisor@omov.com');
+        const merged = [...parsed];
+        if (!hasAdmin) {
+          merged.unshift(defaultMockUsers[0]);
+        }
+        if (!hasSupervisor) {
+          merged.unshift(defaultMockUsers[1]);
+        }
+        return merged;
+      }
+    }
+  } catch (err) {
+    console.error('Gagal membaca cache pengguna disk:', err);
+  }
+  return [...defaultMockUsers];
+}
+
+function persistUsers(users: UserAccount[]) {
+  if (isTestEnv) return;
+  try {
+    const filePath = getUsersStorageFilePath();
+    fs.writeFileSync(filePath, JSON.stringify(users, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Gagal menyimpan pengguna ke disk:', err);
+  }
+}
+
+let mockUsers: UserAccount[] = loadPersistedUsers();
 
 export const db = {
   // Reports
@@ -246,6 +296,7 @@ export const db = {
       existing.nama = nama;
       existing.role = role;
       if (password) existing.password = password;
+      persistUsers(mockUsers);
       return existing;
     }
     const newUser: UserAccount = {
@@ -253,16 +304,20 @@ export const db = {
       nama,
       email,
       role,
-      password,
+      password: password || (role === 'superadmin' ? 'admin123' : 'supervisor123'),
       aktif: true,
       createdAt: new Date().toISOString().split('T')[0],
     };
     mockUsers.unshift(newUser);
+    persistUsers(mockUsers);
     return newUser;
   },
   toggleUserActive: (id: string) => {
     const u = mockUsers.find((user) => user.id === id);
-    if (u) u.aktif = !u.aktif;
+    if (u) {
+      u.aktif = !u.aktif;
+      persistUsers(mockUsers);
+    }
     return u;
   },
   createUser: (user: Partial<UserAccount>): UserAccount => {
@@ -271,11 +326,12 @@ export const db = {
       nama: user.nama || 'Pengguna Baru',
       email: user.email || '',
       role: user.role || 'lapangan',
-      password: user.password,
+      password: user.password || (user.role === 'superadmin' ? 'admin123' : 'supervisor123'),
       aktif: user.aktif !== undefined ? user.aktif : true,
       createdAt: new Date().toISOString().split('T')[0],
     };
     mockUsers.unshift(newUser);
+    persistUsers(mockUsers);
     return newUser;
   },
   updateUser: (id: string, updates: Partial<UserAccount>): UserAccount | null => {
@@ -286,12 +342,14 @@ export const db = {
     if (updates.role !== undefined) u.role = updates.role;
     if (updates.aktif !== undefined) u.aktif = updates.aktif;
     if (updates.password !== undefined) u.password = updates.password;
+    persistUsers(mockUsers);
     return u;
   },
   deleteUser: (id: string): boolean => {
     const idx = mockUsers.findIndex((u) => u.id === id);
     if (idx === -1) return false;
     mockUsers.splice(idx, 1);
+    persistUsers(mockUsers);
     return true;
   },
 };

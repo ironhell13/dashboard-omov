@@ -125,6 +125,9 @@ export async function POST(request: Request) {
             await adminClient.from('profiles').upsert(profilePayload);
           }
 
+          // Sinkronkan ke database lokal & disk agar selalu tersedia
+          db.addUser(cleanNama, cleanEmail, role, pwd);
+
           return NextResponse.json({
             success: true,
             data: {
@@ -200,6 +203,8 @@ export async function PATCH(request: Request) {
             );
           }
 
+          db.updateUser(id, { password: password.trim() });
+
           return NextResponse.json({
             success: true,
             message: 'Kata sandi berhasil diperbarui',
@@ -259,6 +264,15 @@ export async function PATCH(request: Request) {
             await adminClient.auth.admin.updateUserById(id, authUpdates);
           }
 
+          // Sinkronkan ke database lokal
+          db.updateUser(id, {
+            ...(nama && { nama: nama.trim() }),
+            ...(role && { role }),
+            ...(email && { email: email.trim().toLowerCase() }),
+            ...(aktif !== undefined && { aktif }),
+            ...(password && { password: password.trim() }),
+          });
+
           return NextResponse.json({
             success: true,
             data: { id, ...profileUpdates },
@@ -311,6 +325,8 @@ export async function PATCH(request: Request) {
             { status: 400 }
           );
         }
+
+        db.toggleUserActive(id);
 
         return NextResponse.json({
           success: true,
@@ -373,6 +389,8 @@ export async function DELETE(request: Request) {
 
         // Pastikan juga terhapus dari tabel profiles
         await adminClient.from('profiles').delete().eq('id', id);
+
+        db.deleteUser(id);
 
         return NextResponse.json({
           success: true,

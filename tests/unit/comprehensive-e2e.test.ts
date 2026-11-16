@@ -86,7 +86,35 @@ describe('Pengujian Komprehensif Sistem Produksi Laporan OMOV (SPEC E2E)', () =>
       expect(setCookie).toContain('omov_role=superadmin');
     });
 
-    it('berhasil login sebagai Supervisor dengan kredensial yang valid', async () => {
+    it('berhasil login sebagai Superadmin dengan password Admin123!', async () => {
+      const req = new Request('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'admin@omov.com', password: 'Admin123!' }),
+      });
+      const res = await loginPost(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.role).toBe('superadmin');
+    });
+
+    it('berhasil login sebagai Supervisor dengan kredensial yang valid (supervisor@omov.com)', async () => {
+      const req = new Request('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'supervisor@omov.com', password: 'supervisor123' }),
+      });
+      const res = await loginPost(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.role).toBe('supervisor');
+    });
+
+    it('berhasil login sebagai Supervisor dengan budi.santoso@omov.com', async () => {
       const req = new Request('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
