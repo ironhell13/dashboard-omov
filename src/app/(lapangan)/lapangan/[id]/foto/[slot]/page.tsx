@@ -45,8 +45,8 @@ export default function PhotoStudioPage({
 
   const slot = PHOTO_SLOTS.find((s) => s.key === slotKey);
   const [reportInfo, setReportInfo] = useState<{ wsid: string; lokasi: string }>({
-    wsid: 'Z9KD',
-    lokasi: 'SPBU 3415143 Otista',
+    wsid: '',
+    lokasi: '',
   });
 
   // State

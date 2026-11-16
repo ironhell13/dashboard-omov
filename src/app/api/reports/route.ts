@@ -23,11 +23,13 @@ export async function GET(request: Request) {
     const tanggal = searchParams.get('tanggal') || '';
 
     const hasSupabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
       !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
     const hasServiceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy');
+      (!!process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy')) ||
+      (!!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('dummy'));
 
     // 1. Ambil dari Supabase Database jika kredensial tersedia
     if (hasSupabaseUrl && hasServiceKey) {
@@ -53,9 +55,17 @@ export async function GET(request: Request) {
         }
         if (error) {
           console.error('Supabase get reports error:', error);
+          return NextResponse.json(
+            { success: false, error: `Gagal membaca database Supabase: ${error.message}` },
+            { status: 500 }
+          );
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Supabase query error:', err);
+        return NextResponse.json(
+          { success: false, error: `Koneksi database Supabase gagal: ${err.message}` },
+          { status: 500 }
+        );
       }
     }
 
@@ -94,11 +104,13 @@ export async function POST(request: Request) {
     const cleanAlamat = validated.alamat?.trim() || '';
 
     const hasSupabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
       !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
     const hasServiceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy');
+      (!!process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy')) ||
+      (!!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('dummy'));
 
     // 1. Simpan permanen ke Supabase Database
     if (hasSupabaseUrl && hasServiceKey) {
@@ -128,13 +140,26 @@ export async function POST(request: Request) {
 
         if (error) {
           console.error('Supabase create report error:', error);
-        } else if (newReport) {
-          // Sinkronkan juga ke cache memori lokal
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Gagal menyimpan ke database Supabase: ${error.message}. Pastikan tabel reports ada dan SUPABASE_SERVICE_ROLE_KEY terisi di Vercel.`,
+            },
+            { status: 500 }
+          );
+        }
+
+        if (newReport) {
+          // Sinkronkan juga ke cache lokal
           db.createReport(newReport);
           return NextResponse.json({ success: true, data: newReport });
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Supabase create report catch error:', err);
+        return NextResponse.json(
+          { success: false, error: `Koneksi database Supabase gagal: ${err.message}` },
+          { status: 500 }
+        );
       }
     }
 

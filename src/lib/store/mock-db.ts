@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { Report, ReportData, UserRole } from '@/types/database';
 
 export interface MasterVendor {
@@ -27,23 +29,23 @@ export interface UserAccount {
   createdAt: string;
 }
 
-// In-memory persistent database for testing/runtime
-let mockReports: Report[] = [
+const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+
+// Sample data hanya untuk pengujian unit otomatis (Vitest)
+const sampleTestReports: Report[] = [
   {
-    id: 'rep-01',
-    wsid: 'Z9KD',
-    lokasi: 'SPBU 3415143 Otista',
+    id: 'rep-test-01',
+    wsid: 'Z9KD-TEST',
+    lokasi: 'SPBU Otista Test',
     teknisi: 'Ahmad Fauzi',
     jenis_pekerjaan: 'Trade In',
     tanggal: '2026-11-15',
     status: 'menunggu_foto',
-    claimed_by: 'user-02',
-    claimed_at: '2026-11-15T02:30:00Z',
     created_at: '2026-11-15T01:00:00Z',
     updated_at: '2026-11-15T02:30:00Z',
     data: {
-      wsid: 'Z9KD',
-      lokasi: 'SPBU 3415143 Otista',
+      wsid: 'Z9KD-TEST',
+      lokasi: 'SPBU Otista Test',
       teknisi: 'Ahmad Fauzi',
       alamat: 'Jl. Raya Otista No. 143, Tangerang',
       type_mesin_baru: 'NCR 6625',
@@ -59,81 +61,51 @@ let mockReports: Report[] = [
       mengetahui: 'Budi Santoso',
     },
   },
-  {
-    id: 'rep-02',
-    wsid: 'B482',
-    lokasi: 'KCP Daan Mogot Mall',
-    teknisi: 'Bambang Irawan',
-    jenis_pekerjaan: 'Replace',
-    tanggal: '2026-11-15',
-    status: 'foto_lengkap',
-    claimed_by: 'user-03',
-    claimed_at: '2026-11-15T03:00:00Z',
-    created_at: '2026-11-15T02:00:00Z',
-    updated_at: '2026-11-15T04:15:00Z',
-    data: {
-      wsid: 'B482',
-      lokasi: 'KCP Daan Mogot Mall',
-      teknisi: 'Bambang Irawan',
-      alamat: 'Mall Daan Mogot Lt. Dasar, Jakarta Barat',
-      type_mesin_baru: 'Diebold 5500',
-      serial_nomor: 'DB-441122',
-      tegangan_ups_it: 223,
-      grounding_ups_it: 0.8,
-      ip_address: '10.30.12.88',
-      kota: 'Jakarta',
-      yang_melakukan: 'Bambang Irawan',
-      mengetahui: 'Budi Santoso',
-    },
-  },
-  {
-    id: 'rep-03',
-    wsid: 'A199',
-    lokasi: 'Indomaret HOS Cokroaminoto',
-    teknisi: 'Eko Prasetyo',
-    jenis_pekerjaan: 'Aktivasi Online Baru',
-    tanggal: '2026-11-15',
-    status: 'perlu_perbaikan',
-    claimed_by: 'user-04',
-    claimed_at: '2026-11-15T04:00:00Z',
-    created_at: '2026-11-15T03:00:00Z',
-    updated_at: '2026-11-15T04:45:00Z',
-    data: {
-      wsid: 'A199',
-      lokasi: 'Indomaret HOS Cokroaminoto',
-      teknisi: 'Eko Prasetyo',
-      alamat: 'Jl. HOS Cokroaminoto No. 89, Larangan, Tangerang',
-      type_mesin_baru: 'NCR 6632',
-      serial_nomor: 'NC-772211',
-      kota: 'Jakarta',
-      yang_melakukan: 'Eko Prasetyo',
-      mengetahui: 'Budi Santoso',
-    },
-  },
-  {
-    id: 'rep-04',
-    wsid: 'K881',
-    lokasi: 'Alfamart Ciledug Raya',
-    teknisi: 'Ahmad Fauzi',
-    jenis_pekerjaan: 'Relokasi',
-    tanggal: '2026-11-14',
-    status: 'final',
-    created_at: '2026-11-14T05:00:00Z',
-    updated_at: '2026-11-14T09:00:00Z',
-    finalized_at: '2026-11-14T09:00:00Z',
-    data: {
-      wsid: 'K881',
-      lokasi: 'Alfamart Ciledug Raya',
-      teknisi: 'Ahmad Fauzi',
-      alamat: 'Jl. Ciledug Raya No. 12, Tangerang',
-      type_mesin_baru: 'Hyosung Monimax 5600',
-      serial_nomor: 'HY-123456',
-      kota: 'Jakarta',
-      yang_melakukan: 'Ahmad Fauzi',
-      mengetahui: 'Budi Santoso',
-    },
-  },
 ];
+
+function getStorageFilePath(): string {
+  try {
+    const localDir = path.resolve(process.cwd(), '.data');
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    return path.join(localDir, 'reports_store.json');
+  } catch {
+    return '/tmp/omov_reports_store.json';
+  }
+}
+
+function loadPersistedReports(): Report[] {
+  if (isTestEnv) {
+    return [...sampleTestReports];
+  }
+  try {
+    const filePath = getStorageFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error('Gagal membaca cache laporan disk:', err);
+  }
+  // Di lingkungan produksi/pengembangan, mulai bersih (kosong) tanpa data dummy
+  return [];
+}
+
+function persistReports(reports: Report[]) {
+  if (isTestEnv) return;
+  try {
+    const filePath = getStorageFilePath();
+    fs.writeFileSync(filePath, JSON.stringify(reports, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Gagal menyimpan laporan ke disk:', err);
+  }
+}
+
+let mockReports: Report[] = loadPersistedReports();
 
 let mockVendors: MasterVendor[] = [
   { id: 1, nama: 'PT TAG', peran: 'Vendor Instalasi & Mover' },
@@ -169,17 +141,19 @@ let mockUsers: UserAccount[] = [
 export const db = {
   // Reports
   getReports: () => [...mockReports],
-  getReportById: (id: string) => mockReports.find(r => r.id === id),
+  getReportById: (id: string) => mockReports.find((r) => r.id === id),
   createReport: (report: Partial<Report>): Report => {
     const teknisiName = (report.teknisi || report.data?.teknisi || 'Tim Lapangan OMOV').trim();
     const newReport: Report = {
-      id: `rep-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
+      id: report.id || `rep-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
       wsid: (report.wsid || '').toUpperCase().trim(),
       lokasi: (report.lokasi || '').trim(),
       teknisi: teknisiName,
       jenis_pekerjaan: report.jenis_pekerjaan || 'Trade In',
       tanggal: report.tanggal || new Date().toISOString().split('T')[0],
-      status: 'menunggu_foto',
+      status: report.status || 'menunggu_foto',
+      claimed_by: report.claimed_by,
+      claimed_at: report.claimed_at,
       data: {
         wsid: (report.wsid || '').toUpperCase().trim(),
         lokasi: (report.lokasi || '').trim(),
@@ -188,14 +162,23 @@ export const db = {
         alamat: report.data?.alamat || '',
         ...report.data,
       },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: report.created_at || new Date().toISOString(),
+      updated_at: report.updated_at || new Date().toISOString(),
     };
-    mockReports.unshift(newReport);
+
+    // Cegah duplikasi jika id sudah ada
+    const existingIdx = mockReports.findIndex((r) => r.id === newReport.id);
+    if (existingIdx !== -1) {
+      mockReports[existingIdx] = newReport;
+    } else {
+      mockReports.unshift(newReport);
+    }
+
+    persistReports(mockReports);
     return newReport;
   },
   updateReportData: (id: string, data: Partial<ReportData>, status?: string) => {
-    const rep = mockReports.find(r => r.id === id);
+    const rep = mockReports.find((r) => r.id === id);
     if (!rep) return null;
     rep.data = { ...rep.data, ...data };
     if (data.wsid) rep.wsid = data.wsid.toUpperCase().trim();
@@ -206,12 +189,15 @@ export const db = {
     if (data.tanggal) rep.tanggal = data.tanggal;
     rep.updated_at = new Date().toISOString();
     if (status) rep.status = status as any;
+
+    persistReports(mockReports);
     return rep;
   },
   deleteReport: (id: string) => {
-    const idx = mockReports.findIndex(r => r.id === id);
+    const idx = mockReports.findIndex((r) => r.id === id);
     if (idx === -1) return false;
     mockReports.splice(idx, 1);
+    persistReports(mockReports);
     return true;
   },
 
@@ -223,7 +209,8 @@ export const db = {
     return newV;
   },
   deleteVendor: (id: number) => {
-    mockVendors = mockVendors.filter(v => v.id !== id);
+    const idx = mockVendors.findIndex((v) => v.id === id);
+    if (idx !== -1) mockVendors.splice(idx, 1);
   },
 
   getMesin: () => [...mockMesin],
@@ -233,7 +220,8 @@ export const db = {
     return newM;
   },
   deleteMesin: (id: number) => {
-    mockMesin = mockMesin.filter(m => m.id !== id);
+    const idx = mockMesin.findIndex((m) => m.id === id);
+    if (idx !== -1) mockMesin.splice(idx, 1);
   },
 
   getOrang: () => [...mockOrang],
@@ -243,13 +231,17 @@ export const db = {
     return newO;
   },
   deleteOrang: (id: number) => {
-    mockOrang = mockOrang.filter(o => o.id !== id);
+    const idx = mockOrang.findIndex((o) => o.id === id);
+    if (idx !== -1) mockOrang.splice(idx, 1);
   },
 
   // Users
   getUsers: () => [...mockUsers],
+  getUserById: (id: string) => mockUsers.find((u) => u.id === id),
+  getUserByEmail: (email: string) =>
+    mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase()),
   addUser: (nama: string, email: string, role: UserRole, password?: string) => {
-    const existing = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const existing = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       existing.nama = nama;
       existing.role = role;
@@ -265,25 +257,39 @@ export const db = {
       aktif: true,
       createdAt: new Date().toISOString().split('T')[0],
     };
-    mockUsers.push(newUser);
+    mockUsers.unshift(newUser);
     return newUser;
   },
   toggleUserActive: (id: string) => {
-    const u = mockUsers.find(user => user.id === id);
+    const u = mockUsers.find((user) => user.id === id);
     if (u) u.aktif = !u.aktif;
     return u;
   },
-  updateUser: (id: string, updates: Partial<UserAccount>) => {
-    const idx = mockUsers.findIndex(user => user.id === id);
-    if (idx === -1) return null;
-    mockUsers[idx] = {
-      ...mockUsers[idx],
-      ...updates,
+  createUser: (user: Partial<UserAccount>): UserAccount => {
+    const newUser: UserAccount = {
+      id: `usr-${Date.now().toString(36)}`,
+      nama: user.nama || 'Pengguna Baru',
+      email: user.email || '',
+      role: user.role || 'lapangan',
+      password: user.password,
+      aktif: user.aktif !== undefined ? user.aktif : true,
+      createdAt: new Date().toISOString().split('T')[0],
     };
-    return mockUsers[idx];
+    mockUsers.unshift(newUser);
+    return newUser;
   },
-  deleteUser: (id: string) => {
-    const idx = mockUsers.findIndex(user => user.id === id);
+  updateUser: (id: string, updates: Partial<UserAccount>): UserAccount | null => {
+    const u = mockUsers.find((usr) => usr.id === id);
+    if (!u) return null;
+    if (updates.nama !== undefined) u.nama = updates.nama;
+    if (updates.email !== undefined) u.email = updates.email;
+    if (updates.role !== undefined) u.role = updates.role;
+    if (updates.aktif !== undefined) u.aktif = updates.aktif;
+    if (updates.password !== undefined) u.password = updates.password;
+    return u;
+  },
+  deleteUser: (id: string): boolean => {
+    const idx = mockUsers.findIndex((u) => u.id === id);
     if (idx === -1) return false;
     mockUsers.splice(idx, 1);
     return true;

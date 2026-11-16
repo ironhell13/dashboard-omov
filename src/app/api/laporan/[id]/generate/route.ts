@@ -23,11 +23,13 @@ export async function POST(
     let report: any = null;
 
     const hasSupabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
       !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy');
     const hasServiceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy');
+      (!!process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('dummy')) ||
+      (!!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('dummy'));
 
     let adminClient: any = null;
     if (hasSupabaseUrl && hasServiceKey) {
