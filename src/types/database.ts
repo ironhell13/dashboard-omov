@@ -27,6 +27,8 @@ export interface ReportData {
   lokasi?: string;
   wsid?: string;
   teknisi?: string;
+  jenis_pekerjaan?: JenisPekerjaan;
+  tanggal?: string;
   alamat?: string;
   lokasi_lama?: string;
   wsid_lama?: string;

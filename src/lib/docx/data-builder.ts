@@ -13,20 +13,22 @@ export function buildDocumentData(
     return String(val);
   };
 
-  const jenisUpper = (report.jenis_pekerjaan || 'Trade In').toUpperCase();
-  const tglTeks = formatTanggalIndonesia(report.tanggal);
-  const hariTeks = getNamaHariIndonesia(report.tanggal);
+  const targetJenis = d.jenis_pekerjaan || report.jenis_pekerjaan || 'Trade In';
+  const jenisUpper = targetJenis.toUpperCase();
+  const targetTanggal = d.tanggal || report.tanggal;
+  const tglTeks = formatTanggalIndonesia(targetTanggal);
+  const hariTeks = getNamaHariIndonesia(targetTanggal);
 
   const data: Record<string, any> = {
     // Identitas
-    wsid: report.wsid,
-    lokasi: report.lokasi,
+    wsid: d.wsid || report.wsid,
+    lokasi: d.lokasi || report.lokasi,
     alamat: sanitizeVal(d.alamat),
     wsid_lama: sanitizeVal(d.wsid_lama),
     lokasi_lama: sanitizeVal(d.lokasi_lama),
     type_mesin_baru: sanitizeVal(d.type_mesin_baru),
     serial_nomor: sanitizeVal(d.serial_nomor),
-    jenis_pekerjaan: report.jenis_pekerjaan,
+    jenis_pekerjaan: targetJenis,
     jenis_pekerjaan_upper: jenisUpper,
     tanggal_teks: tglTeks,
     hari: hariTeks,
@@ -76,7 +78,7 @@ export function buildDocumentData(
     koordinat_text: d.koordinat ? `${d.koordinat.lat}, ${d.koordinat.lng}` : '-',
 
     // Penandatangan
-    yang_melakukan: sanitizeVal(d.yang_melakukan) === '-' ? 'Budi Santoso' : d.yang_melakukan,
+    yang_melakukan: sanitizeVal(d.yang_melakukan || d.teknisi || report.teknisi) === '-' ? 'Budi Santoso' : (d.yang_melakukan || d.teknisi || report.teknisi),
     mengetahui: sanitizeVal(d.mengetahui) === '-' ? 'Ahmad Fauzi' : d.mengetahui,
     penandatangan_vendor: sanitizeVal(d.penandatangan_vendor) === '-' ? 'Purwanto' : d.penandatangan_vendor,
 

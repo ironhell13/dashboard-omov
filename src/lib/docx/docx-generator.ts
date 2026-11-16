@@ -60,14 +60,17 @@ export async function generateDocx(
     const [wPx, hPx] = SLOT_DIMENSIONS_PX[key] || [170, 128];
 
     if (buf) {
-      const processed = await preprocessPhoto(buf, wPx, hPx);
+      // Skala 2.5x - 3x untuk ketajaman foto ekstra jernih di Word (300 DPI) tanpa gepeng
+      const renderW = Math.round(wPx * 2.8);
+      const renderH = Math.round(hPx * 2.8);
+      const processed = await preprocessPhoto(buf, renderW, renderH);
       processedPhotos.set(key, processed);
     } else {
       // Jika kosong, sediakan placeholder putih/subtle
       const placeholder = await sharp({
         create: {
-          width: wPx,
-          height: hPx,
+          width: wPx * 2,
+          height: hPx * 2,
           channels: 3,
           background: { r: 245, g: 249, b: 255 },
         },

@@ -68,9 +68,34 @@ export async function PATCH(
       try {
         const adminClient = createAdminClient();
         const updates: any = { updated_at: new Date().toISOString() };
-        if (body.data) updates.data = body.data;
+
         if (body.status) updates.status = body.status;
-        if (body.teknisi) updates.teknisi = body.teknisi;
+
+        // Ambil data lama agar tidak menimpa field data lain jika save parsial
+        const { data: currentReport } = await adminClient
+          .from('reports')
+          .select('data')
+          .eq('id', id)
+          .single();
+
+        const mergedData = { ...(currentReport?.data || {}), ...(body.data || {}) };
+        updates.data = mergedData;
+
+        // Sinkronkan juga kolom baris utama di tabel reports
+        const wsidVal = body.wsid || body.data?.wsid;
+        if (wsidVal) updates.wsid = wsidVal.toUpperCase().trim();
+
+        const lokasiVal = body.lokasi || body.data?.lokasi;
+        if (lokasiVal) updates.lokasi = lokasiVal.trim();
+
+        const teknisiVal = body.teknisi || body.data?.teknisi || body.data?.yang_melakukan;
+        if (teknisiVal) updates.teknisi = teknisiVal.trim();
+
+        const jenisVal = body.jenis_pekerjaan || body.data?.jenis_pekerjaan;
+        if (jenisVal) updates.jenis_pekerjaan = jenisVal;
+
+        const tanggalVal = body.tanggal || body.data?.tanggal;
+        if (tanggalVal) updates.tanggal = tanggalVal;
 
         const { data: updatedReport, error } = await adminClient
           .from('reports')
@@ -80,7 +105,7 @@ export async function PATCH(
           .single();
 
         if (!error && updatedReport) {
-          db.updateReportData(id, body.data || {}, body.status);
+          db.updateReportData(id, mergedData, body.status);
           return NextResponse.json({ success: true, data: updatedReport });
         }
       } catch (err) {

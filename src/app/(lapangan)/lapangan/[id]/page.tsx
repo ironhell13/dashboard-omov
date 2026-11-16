@@ -15,7 +15,11 @@ import {
   UserCheck,
   RefreshCw,
   Info,
-  UploadCloud
+  UploadCloud,
+  FileText,
+  Edit3,
+  Save,
+  X
 } from 'lucide-react';
 import { PHOTO_SLOTS, GROUPS, PhotoSlot } from '@/types/slot';
 import { getStatusBadgeConfig } from '@/lib/utils';
@@ -43,6 +47,21 @@ export default function LapanganDetailPage({
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
   const batchFileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // State untuk Isian Data Teknis Lapangan
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+  const [fieldData, setFieldData] = useState<{
+    wsid?: string;
+    lokasi?: string;
+    teknisi?: string;
+    tegangan_ups_it?: string | number;
+    grounding_ups_it?: string | number;
+    type_mesin_baru?: string;
+    serial_nomor?: string;
+    alamat?: string;
+  }>({});
+  const [isSavingFieldData, setIsSavingFieldData] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
   const fetchPhotos = () => {
     fetch(`/api/photos?reportId=${id}`)
       .then((res) => res.json())
@@ -54,18 +73,68 @@ export default function LapanganDetailPage({
       });
   };
 
-  useEffect(() => {
+  const fetchReport = () => {
     fetch(`/api/reports/${id}`)
       .then((res) => res.json())
       .then((json) => {
         if (json.success && json.data) {
-          setReport(json.data);
-          setClaimed(!!json.data.claimed_by);
+          const rep = json.data;
+          setReport(rep);
+          setClaimed(!!rep.claimed_by);
+          setFieldData({
+            wsid: rep.wsid,
+            lokasi: rep.lokasi,
+            teknisi: rep.teknisi || rep.data?.teknisi || rep.data?.yang_melakukan || '',
+            tegangan_ups_it: rep.data?.tegangan_ups_it || '',
+            grounding_ups_it: rep.data?.grounding_ups_it || '',
+            type_mesin_baru: rep.data?.type_mesin_baru || '',
+            serial_nomor: rep.data?.serial_nomor || '',
+            alamat: rep.data?.alamat || '',
+          });
         }
       });
+  };
 
+  useEffect(() => {
+    fetchReport();
     fetchPhotos();
   }, [id]);
+
+  const handleSaveFieldData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingFieldData(true);
+    setSaveSuccessMsg('');
+    try {
+      const res = await fetch(`/api/reports/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: {
+            ...report?.data,
+            ...fieldData,
+          },
+          teknisi: fieldData.teknisi,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setSaveSuccessMsg('Data teknis lapangan berhasil disimpan!');
+        setTimeout(() => {
+          setIsDataModalOpen(false);
+          setSaveSuccessMsg('');
+        }, 1200);
+        if (json.data) {
+          setReport(json.data);
+        }
+      } else {
+        alert(`Gagal menyimpan: ${json.error}`);
+      }
+    } catch (err: any) {
+      alert(`Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setIsSavingFieldData(false);
+    }
+  };
 
   const handleBatchFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -130,6 +199,46 @@ export default function LapanganDetailPage({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Quick Field Technical Data Card */}
+      <div className="bg-white p-3.5 rounded-card border border-border flex items-center justify-between gap-3 shadow-xs">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-text">
+            <FileText className="w-3.5 h-3.5 text-primary" />
+            <span>Data Teknis & Pengukuran Lapangan</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-text-muted">
+            <span>
+              UPS:{' '}
+              <strong className="text-text font-semibold">
+                {report.data?.tegangan_ups_it ? `${report.data.tegangan_ups_it}V` : '-'}
+              </strong>
+            </span>
+            <span>&middot;</span>
+            <span>
+              Ground:{' '}
+              <strong className="text-text font-semibold">
+                {report.data?.grounding_ups_it ? `${report.data.grounding_ups_it}V` : '-'}
+              </strong>
+            </span>
+            <span>&middot;</span>
+            <span>
+              SN:{' '}
+              <strong className="text-text font-semibold">
+                {report.data?.serial_nomor || '-'}
+              </strong>
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsDataModalOpen(true)}
+          className="btn-secondary h-8 px-3 text-xs font-semibold gap-1.5 shrink-0"
+        >
+          <Edit3 className="w-3.5 h-3.5 text-primary" />
+          <span>Isi / Edit Data</span>
+        </button>
       </div>
 
       {/* Progress Bar & Batch Import */}
@@ -315,6 +424,141 @@ export default function LapanganDetailPage({
             fetchPhotos();
           }}
         />
+      )}
+
+      {/* Modal Isian Data Teknis Lapangan */}
+      {isDataModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
+          <div className="bg-white rounded-card max-w-lg w-full p-5 space-y-4 shadow-xl my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-bold text-text">Isian Data Teknis Lapangan</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDataModalOpen(false)}
+                className="p-1 rounded-btn hover:bg-bg-subtle text-text-muted hover:text-text"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {saveSuccessMsg && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-btn text-xs font-semibold text-emerald-700 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{saveSuccessMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveFieldData} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Nama Teknisi (Yang Melakukan)
+                  </label>
+                  <input
+                    type="text"
+                    value={fieldData.teknisi || ''}
+                    onChange={(e) => setFieldData({ ...fieldData, teknisi: e.target.value })}
+                    placeholder="Contoh: Ahmad Fauzi / Tim OMOV"
+                    className="form-input text-xs"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Tegangan UPS-IT (Volt)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={fieldData.tegangan_ups_it || ''}
+                    onChange={(e) => setFieldData({ ...fieldData, tegangan_ups_it: e.target.value })}
+                    placeholder="Contoh: 220"
+                    className="form-input text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Grounding UPS-IT (Volt)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={fieldData.grounding_ups_it || ''}
+                    onChange={(e) => setFieldData({ ...fieldData, grounding_ups_it: e.target.value })}
+                    placeholder="Contoh: 1.2"
+                    className="form-input text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Tipe Mesin Baru
+                  </label>
+                  <input
+                    type="text"
+                    value={fieldData.type_mesin_baru || ''}
+                    onChange={(e) => setFieldData({ ...fieldData, type_mesin_baru: e.target.value })}
+                    placeholder="Contoh: NCR 6625"
+                    className="form-input text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Serial Nomor (SN) Baru
+                  </label>
+                  <input
+                    type="text"
+                    value={fieldData.serial_nomor || ''}
+                    onChange={(e) => setFieldData({ ...fieldData, serial_nomor: e.target.value })}
+                    placeholder="Contoh: SN-88992211"
+                    className="form-input text-xs"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Alamat Lengkap Penempatan
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={fieldData.alamat || ''}
+                    onChange={(e) => setFieldData({ ...fieldData, alamat: e.target.value })}
+                    placeholder="Alamat penempatan ATM..."
+                    className="form-input text-xs resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setIsDataModalOpen(false)}
+                  className="btn-secondary h-9 px-4 text-xs font-semibold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingFieldData}
+                  className="btn-primary h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm disabled:opacity-50"
+                >
+                  {isSavingFieldData ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>{isSavingFieldData ? 'Menyimpan...' : 'Simpan Data Teknis'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -57,15 +57,67 @@ export default function SupervisorDetailPage({
   const [isBatchRejectModalOpen, setIsBatchRejectModalOpen] = useState(false);
   const [batchRejectNote, setBatchRejectNote] = useState('');
 
+  const [isManualSaving, setIsManualSaving] = useState(false);
+  const [manualSaveMessage, setManualSaveMessage] = useState<string | null>(null);
+
   const fetchReport = () => {
     fetch(`/api/reports/${id}`)
       .then((res) => res.json())
       .then((json) => {
         if (json.success && json.data) {
-          setReport(json.data);
-          setFormData(json.data.data || {});
+          const rep = json.data;
+          setReport(rep);
+          const initialData: ReportData = {
+            wsid: rep.wsid,
+            lokasi: rep.lokasi,
+            teknisi: rep.teknisi,
+            jenis_pekerjaan: rep.jenis_pekerjaan,
+            tanggal: rep.tanggal,
+            ...(rep.data || {}),
+          };
+          if (!initialData.wsid) initialData.wsid = rep.wsid;
+          if (!initialData.lokasi) initialData.lokasi = rep.lokasi;
+          if (!initialData.teknisi) initialData.teknisi = rep.teknisi;
+          if (!initialData.yang_melakukan) initialData.yang_melakukan = rep.teknisi;
+          if (!initialData.jenis_pekerjaan) initialData.jenis_pekerjaan = rep.jenis_pekerjaan;
+          if (!initialData.tanggal) initialData.tanggal = rep.tanggal;
+          setFormData(initialData);
         }
       });
+  };
+
+  const handleManualSave = async () => {
+    setIsManualSaving(true);
+    setSaveStatus('saving');
+    try {
+      const res = await fetch(`/api/reports/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: formData,
+          wsid: formData.wsid,
+          lokasi: formData.lokasi,
+          teknisi: formData.teknisi || formData.yang_melakukan,
+          jenis_pekerjaan: formData.jenis_pekerjaan,
+          tanggal: formData.tanggal,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setSaveStatus('saved');
+        setManualSaveMessage('Data teks laporan berhasil disimpan ke database!');
+        setTimeout(() => setManualSaveMessage(null), 3500);
+        fetchReport();
+      } else {
+        setSaveStatus('idle');
+        alert(`Gagal menyimpan data teks: ${json.error}`);
+      }
+    } catch (err: any) {
+      setSaveStatus('idle');
+      alert(`Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setIsManualSaving(false);
+    }
   };
 
   const fetchPhotos = () => {
@@ -104,7 +156,14 @@ export default function SupervisorDetailPage({
         await fetch(`/api/reports/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: formData }),
+          body: JSON.stringify({
+            data: formData,
+            wsid: formData.wsid,
+            lokasi: formData.lokasi,
+            teknisi: formData.teknisi || formData.yang_melakukan,
+            jenis_pekerjaan: formData.jenis_pekerjaan,
+            tanggal: formData.tanggal,
+          }),
         });
         setSaveStatus('saved');
       } catch {
@@ -483,74 +542,128 @@ export default function SupervisorDetailPage({
 
       {/* TAB 1: FORM DATA TEKS */}
       {activeTab === 'data' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sub-nav Sections */}
-          <div className="app-card p-3 bg-white h-fit space-y-1">
-            {[
-              { id: 'identitas', label: '1. Identitas Mesin' },
-              { id: 'kelistrikan', label: '2. Kelistrikan UPS-IT' },
-              { id: 'jaringan', label: '3. Jaringan & IP' },
-              { id: 'isi_mesin', label: '4. Isi Mesin ATM' },
-              { id: 'perangkat', label: '5. Status Perangkat' },
-              { id: 'indoor_outdoor', label: '6. Indoor & Outdoor' },
-              { id: 'pengaman', label: '7. Letak & Pengaman' },
-              { id: 'penandatangan', label: '8. Penandatangan' },
-              { id: 'vendor', label: '9. BA Waktu Hadir Vendor' },
-              { id: 'dynabolt', label: '10. BA Dynabolt & HDD' },
-            ].map((sec) => (
+        <div className="space-y-4">
+          {/* Header Action Bar for Manual Text Data Saving */}
+          <div className="app-card p-4 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-border shadow-sm">
+            <div>
+              <h2 className="text-sm font-bold text-text">Isian Data Teks Berita Acara (BA)</h2>
+              <p className="text-xs text-text-muted mt-0.5">
+                Isi data teks secara manual dan klik tombol simpan untuk memperbarui laporan dan data Word (.docx).
+              </p>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {manualSaveMessage && (
+                <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1.5 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {manualSaveMessage}
+                </span>
+              )}
               <button
-                key={sec.id}
-                onClick={() => setActiveDataSection(sec.id)}
-                className={`w-full text-left px-3.5 py-2.5 rounded-btn text-xs font-medium transition-colors ${
-                  activeDataSection === sec.id
-                    ? 'bg-bg-tint text-primary font-semibold'
-                    : 'text-text-muted hover:bg-bg-subtle hover:text-text'
-                }`}
+                type="button"
+                onClick={handleManualSave}
+                disabled={isManualSaving}
+                className="btn-primary w-full sm:w-auto h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm disabled:opacity-50"
               >
-                {sec.label}
+                {isManualSaving ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{isManualSaving ? 'Menyimpan...' : 'Simpan Perubahan Data'}</span>
               </button>
-            ))}
+            </div>
           </div>
 
-          {/* Section Form Content */}
-          <div className="lg:col-span-3 app-card p-6 bg-white space-y-5">
-            {activeDataSection === 'identitas' && (
-              <div className="space-y-4">
-                <h3 className="text-base font-semibold text-text pb-2 border-b border-border">
-                  1. Identitas & Informasi Umum
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">WSID</label>
-                    <input
-                      type="text"
-                      value={formData.wsid || ''}
-                      onChange={(e) => handleFieldChange('wsid', e.target.value.toUpperCase())}
-                      className="form-input uppercase"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Nama Lokasi</label>
-                    <input
-                      type="text"
-                      value={formData.lokasi || ''}
-                      onChange={(e) => handleFieldChange('lokasi', e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-text mb-1">Nama Teknisi (Tim Lapangan)</label>
-                    <input
-                      type="text"
-                      value={formData.teknisi || report.teknisi || ''}
-                      onChange={(e) => {
-                        handleFieldChange('teknisi', e.target.value);
-                        handleFieldChange('yang_melakukan', e.target.value);
-                      }}
-                      placeholder="Contoh: Ahmad Fauzi / Tim OMOV"
-                      className="form-input font-medium"
-                    />
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sub-nav Sections */}
+            <div className="app-card p-3 bg-white h-fit space-y-1">
+              {[
+                { id: 'identitas', label: '1. Identitas Mesin' },
+                { id: 'kelistrikan', label: '2. Kelistrikan UPS-IT' },
+                { id: 'jaringan', label: '3. Jaringan & IP' },
+                { id: 'isi_mesin', label: '4. Isi Mesin ATM' },
+                { id: 'perangkat', label: '5. Status Perangkat' },
+                { id: 'indoor_outdoor', label: '6. Indoor & Outdoor' },
+                { id: 'pengaman', label: '7. Letak & Pengaman' },
+                { id: 'penandatangan', label: '8. Penandatangan' },
+                { id: 'vendor', label: '9. BA Waktu Hadir Vendor' },
+                { id: 'dynabolt', label: '10. BA Dynabolt & HDD' },
+              ].map((sec) => (
+                <button
+                  key={sec.id}
+                  onClick={() => setActiveDataSection(sec.id)}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-btn text-xs font-medium transition-colors ${
+                    activeDataSection === sec.id
+                      ? 'bg-bg-tint text-primary font-semibold'
+                      : 'text-text-muted hover:bg-bg-subtle hover:text-text'
+                  }`}
+                >
+                  {sec.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Section Form Content */}
+            <div className="lg:col-span-3 app-card p-6 bg-white space-y-5">
+              {activeDataSection === 'identitas' && (
+                <div className="space-y-4">
+                  <h3 className="text-base font-semibold text-text pb-2 border-b border-border">
+                    1. Identitas & Informasi Umum
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">WSID</label>
+                      <input
+                        type="text"
+                        value={formData.wsid || ''}
+                        onChange={(e) => handleFieldChange('wsid', e.target.value.toUpperCase())}
+                        className="form-input uppercase"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Nama Lokasi</label>
+                      <input
+                        type="text"
+                        value={formData.lokasi || ''}
+                        onChange={(e) => handleFieldChange('lokasi', e.target.value)}
+                        className="form-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Jenis Pekerjaan</label>
+                      <select
+                        value={formData.jenis_pekerjaan || report.jenis_pekerjaan || 'Trade In'}
+                        onChange={(e) => handleFieldChange('jenis_pekerjaan', e.target.value)}
+                        className="form-input text-xs"
+                      >
+                        <option value="Trade In">Trade In</option>
+                        <option value="Replace">Replace</option>
+                        <option value="Aktivasi Online Baru">Aktivasi Online Baru</option>
+                        <option value="Relokasi">Relokasi</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Tanggal Pekerjaan</label>
+                      <input
+                        type="date"
+                        value={formData.tanggal || report.tanggal || ''}
+                        onChange={(e) => handleFieldChange('tanggal', e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-text mb-1">Nama Teknisi (Tim Lapangan)</label>
+                      <input
+                        type="text"
+                        value={formData.teknisi || report.teknisi || ''}
+                        onChange={(e) => {
+                          handleFieldChange('teknisi', e.target.value);
+                          handleFieldChange('yang_melakukan', e.target.value);
+                        }}
+                        placeholder="Contoh: Ahmad Fauzi / Tim OMOV"
+                        className="form-input font-medium"
+                      />
+                    </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-text mb-1">Alamat Penempatan</label>
                     <input
@@ -959,7 +1072,38 @@ export default function SupervisorDetailPage({
                 </div>
               </div>
             )}
+
+            {/* Global Bottom Save Button for Section Content */}
+            <div className="pt-4 border-t border-border flex items-center justify-between">
+              <span className="text-xs text-text-muted flex items-center gap-1.5">
+                {saveStatus === 'saving' ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+                    <span>Menyinkronkan data...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Data tersimpan di database</span>
+                  </>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={handleManualSave}
+                disabled={isManualSaving}
+                className="btn-primary h-8 px-4 text-xs font-semibold gap-1.5 shadow-sm disabled:opacity-50"
+              >
+                {isManualSaving ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                <span>Simpan Isian Data Teks</span>
+              </button>
+            </div>
           </div>
+        </div>
         </div>
       )}
 

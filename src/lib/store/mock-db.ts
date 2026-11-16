@@ -198,8 +198,12 @@ export const db = {
     const rep = mockReports.find(r => r.id === id);
     if (!rep) return null;
     rep.data = { ...rep.data, ...data };
+    if (data.wsid) rep.wsid = data.wsid.toUpperCase().trim();
+    if (data.lokasi) rep.lokasi = data.lokasi.trim();
     if (data.teknisi) rep.teknisi = data.teknisi;
     if (data.yang_melakukan && !rep.teknisi) rep.teknisi = data.yang_melakukan;
+    if (data.jenis_pekerjaan) rep.jenis_pekerjaan = data.jenis_pekerjaan as any;
+    if (data.tanggal) rep.tanggal = data.tanggal;
     rep.updated_at = new Date().toISOString();
     if (status) rep.status = status as any;
     return rep;

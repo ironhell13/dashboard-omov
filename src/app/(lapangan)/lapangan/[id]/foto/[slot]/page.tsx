@@ -70,6 +70,7 @@ export default function PhotoStudioPage({
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const nativeCameraInputRef = useRef<HTMLInputElement | null>(null);
   const canvasPreviewRef = useRef<HTMLCanvasElement | null>(null);
   const imageElementRef = useRef<HTMLImageElement | null>(null);
 
@@ -143,10 +144,12 @@ export default function PhotoStudioPage({
     if (!videoRef.current) return;
     const v = videoRef.current;
     const c = document.createElement('canvas');
-    c.width = v.videoWidth || 1280;
-    c.height = v.videoHeight || 960;
+    c.width = v.videoWidth || 1920;
+    c.height = v.videoHeight || 1080;
     const ctx = c.getContext('2d');
     if (!ctx) return;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(v, 0, 0, c.width, c.height);
 
     const dataUrl = c.toDataURL('image/jpeg', 0.95);
@@ -482,8 +485,16 @@ export default function PhotoStudioPage({
             <div className="flex flex-col gap-2.5 w-full">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => nativeCameraInputRef.current?.click()}
                 className="w-full py-3 px-4 rounded-btn font-semibold text-xs bg-primary hover:bg-primary-hover text-white transition-colors flex items-center justify-center gap-2 shadow-md"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Ambil Foto Tajam (Kamera HP)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-2.5 px-4 rounded-btn font-semibold text-xs bg-white/15 hover:bg-white/25 text-white transition-colors flex items-center justify-center gap-2 border border-white/20"
               >
                 <ImageIcon className="w-4 h-4" />
                 <span>Pilih Foto dari Galeri HP</span>
@@ -491,10 +502,10 @@ export default function PhotoStudioPage({
               <button
                 type="button"
                 onClick={() => setViewfinderActive(true)}
-                className="w-full py-2.5 px-4 rounded-btn font-semibold text-xs bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center justify-center gap-2 border border-white/20"
+                className="w-full py-2 px-4 rounded-btn font-medium text-xs bg-transparent hover:bg-white/10 text-white/80 hover:text-white transition-colors flex items-center justify-center gap-2"
               >
-                <Camera className="w-4 h-4" />
-                <span>Buka Kamera Langsung</span>
+                <Camera className="w-3.5 h-3.5" />
+                <span>Buka Viewfinder Kamera Layar</span>
               </button>
             </div>
           </div>
@@ -507,13 +518,13 @@ export default function PhotoStudioPage({
         {viewfinderActive && !imageSrc && (
           <div className="flex items-center justify-around py-2">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center gap-1 text-white/80 text-[10px]"
+              onClick={() => nativeCameraInputRef.current?.click()}
+              className="flex flex-col items-center gap-1 text-white/80 hover:text-white text-[10px]"
             >
               <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center">
-                <Camera className="w-5 h-5" />
+                <Camera className="w-5 h-5 text-emerald-400" />
               </div>
-              <span>Kamera Native</span>
+              <span>Kamera HP (Tajam)</span>
             </button>
 
             {/* Big Shutter Button */}
@@ -526,12 +537,12 @@ export default function PhotoStudioPage({
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center gap-1 text-white/80 text-[10px]"
+              className="flex flex-col items-center gap-1 text-white/80 hover:text-white text-[10px]"
             >
               <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center">
-                <Sliders className="w-5 h-5" />
+                <ImageIcon className="w-5 h-5 text-primary" />
               </div>
-              <span>Galeri</span>
+              <span>Galeri HP</span>
             </button>
           </div>
         )}
@@ -648,7 +659,17 @@ export default function PhotoStudioPage({
         )}
       </div>
 
-      {/* Hidden File Input for Gallery / Native Camera */}
+      {/* Hidden File Input for Native Camera (Tajam & Hardware Autofocus) */}
+      <input
+        ref={nativeCameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Hidden File Input for Gallery */}
       <input
         ref={fileInputRef}
         type="file"

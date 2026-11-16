@@ -292,58 +292,52 @@ export async function exportAndCompress(
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('Canvas 2D context tidak tersedia');
 
+  // Aktifkan perataan bicubic resolusi tinggi agar foto tajam dan tidak buram
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
   // Latar putih (wajib untuk mode 'pas' / contain)
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
+  // Terapkan translasi tengah untuk rotasi & zoom presisi
+  ctx.translate(width / 2, height / 2);
+  if (config.rotation) {
+    ctx.rotate((config.rotation * Math.PI) / 180);
+  }
+  const zoomFactor = config.zoom || 1;
+  ctx.scale(zoomFactor, zoomFactor);
 
-  // Mode Isi (Cover) vs Pas (Contain)
+  const imgW = cropArea.width || (img as any).naturalWidth || img.width;
+  const imgH = cropArea.height || (img as any).naturalHeight || img.height;
+  const imgRatio = imgW / imgH;
+  const canvasRatio = width / height;
+
+  let dw = width;
+  let dh = height;
+
   if (config.mode === 'pas') {
-    // Foto utuh di tengah canvas dengan margin putih
-    const imgRatio = cropArea.width / cropArea.height;
-    const canvasRatio = width / height;
-
-    let drawW: number;
-    let drawH: number;
-
+    // Mode 'pas' (contain): foto utuh di tengah dengan latar putih rapi
     if (imgRatio > canvasRatio) {
-      drawW = width;
-      drawH = width / imgRatio;
+      dw = width;
+      dh = width / imgRatio;
     } else {
-      drawH = height;
-      drawW = height * imgRatio;
+      dh = height;
+      dw = height * imgRatio;
     }
-
-    const drawX = (width - drawW) / 2;
-    const drawY = (height - drawH) / 2;
-
-    ctx.drawImage(
-      img,
-      cropArea.x,
-      cropArea.y,
-      cropArea.width,
-      cropArea.height,
-      drawX,
-      drawY,
-      drawW,
-      drawH
-    );
   } else {
-    // Mode Isi (Cover): isi seluruh bingkai canvas
-    ctx.drawImage(
-      img,
-      cropArea.x,
-      cropArea.y,
-      cropArea.width,
-      cropArea.height,
-      0,
-      0,
-      width,
-      height
-    );
+    // Mode 'isi' (cover): foto proporsional memenuhi bingkai tanpa terdistorsi/gepeng
+    if (imgRatio > canvasRatio) {
+      dh = height;
+      dw = height * imgRatio;
+    } else {
+      dw = width;
+      dh = width / imgRatio;
+    }
   }
 
+  ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
   ctx.restore();
 
   // Terapkan penyesuaian piksel kecerahan / kontras / autolevel
@@ -383,10 +377,12 @@ export async function exportAndCompress(
   thumbCanvas.height = thumbH;
   const thumbCtx = thumbCanvas.getContext('2d');
   if (thumbCtx) {
+    thumbCtx.imageSmoothingEnabled = true;
+    thumbCtx.imageSmoothingQuality = 'high';
     thumbCtx.drawImage(canvas, 0, 0, thumbW, thumbH);
   }
   const thumbBlob: Blob = await new Promise((resolve) =>
-    thumbCanvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.70)
+    thumbCanvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.80)
   );
 
   // Hitung metrik kualitas gambar (gelap & buram) untuk informasi non-blocking
