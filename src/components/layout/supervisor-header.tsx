@@ -36,6 +36,12 @@ export function SupervisorHeader({
         >
           <Menu className="w-5 h-5 stroke-[1.75]" />
         </button>
+        <div className="lg:hidden flex items-center gap-2">
+          <div className="w-7 h-7 rounded-md bg-white border border-border overflow-hidden p-0.5 shadow-subtle shrink-0">
+            <img src="/logo.webp" alt="Logo OMOV" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-semibold text-text text-sm tracking-tight">OMOV</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

@@ -65,8 +65,12 @@ export function SupervisorSidebar({ isOpen, onClose, userRole }: SidebarProps) {
         {/* Brand Header */}
         <div className="flex items-center justify-between h-16 px-5 border-b border-border">
           <Link href="/supervisor" className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-9 h-9 rounded-btn bg-primary-soft text-primary">
-              <FileCheck2 className="w-5 h-5 stroke-[1.75]" />
+            <div className="flex items-center justify-center w-9 h-9 rounded-btn bg-white border border-border overflow-hidden p-0.5 shadow-subtle shrink-0">
+              <img
+                src="/logo.webp"
+                alt="Logo OMOV"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="font-semibold text-text text-base tracking-tight block">

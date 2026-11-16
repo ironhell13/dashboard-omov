@@ -25,8 +25,12 @@ export function LapanganHeader({ userName }: { userName?: string } = {}) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-white border-b border-border select-none">
       <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-8 h-8 rounded-btn bg-primary-soft text-primary">
-          <FileCheck2 className="w-4 h-4 stroke-[1.75]" />
+        <div className="flex items-center justify-center w-8 h-8 rounded-btn bg-white border border-border overflow-hidden p-0.5 shadow-subtle shrink-0">
+          <img
+            src="/logo.webp"
+            alt="Logo OMOV"
+            className="w-full h-full object-contain"
+          />
         </div>
         <div>
           <span className="font-semibold text-text text-sm tracking-tight block">

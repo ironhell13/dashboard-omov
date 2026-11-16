@@ -5,7 +5,9 @@ export const metadata: Metadata = {
   title: "LAPORAN OMOV - Berita Acara ATM BCA",
   description: "Aplikasi pembuat Berita Acara Instalasi / Trade In mesin ATM BCA",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.webp",
+    shortcut: "/logo.webp",
+    apple: "/logo.webp",
   },
 };
 

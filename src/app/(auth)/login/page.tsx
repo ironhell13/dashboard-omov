@@ -48,8 +48,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-bg-subtle flex flex-col justify-center items-center px-4 py-8">
       {/* Brand Header */}
       <div className="flex flex-col items-center mb-8 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-primary-soft text-primary flex items-center justify-center shadow-subtle mb-3">
-          <FileCheck2 className="w-8 h-8 stroke-[1.75]" />
+        <div className="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center shadow-card overflow-hidden p-1.5 mb-3">
+          <img
+            src="/logo.webp"
+            alt="Logo OMOV"
+            className="w-full h-full object-contain"
+          />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-text">
           LAPORAN OMOV
