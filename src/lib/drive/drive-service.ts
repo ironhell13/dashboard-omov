@@ -45,31 +45,47 @@ export class GoogleDriveService {
    * Menguji koneksi ke Google Drive API
    */
   public static async testConnection(): Promise<DriveConnectionStatus> {
-    const auth = this.getOAuth2Client();
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-    // Jika kredensial belum diset di environment (mode simulasi)
-    if (!auth) {
+    // Jika kredensial belum diset di environment
+    if (!clientId || !clientSecret || !refreshToken) {
+      const isTestEnv = process.env.NODE_ENV === 'test';
       return {
-        connected: true,
-        message: 'Mode simulasi aktif (kredensial Google OAuth belum disetel di .env)',
-        accountEmail: 'bca.omov.archive@gmail.com (Simulasi)',
-        rootFolderId: 'omov-root-folder-simulated',
+        connected: isTestEnv,
+        message: isTestEnv
+          ? 'Koneksi mode pengujian otomatis aktif'
+          : 'Kredensial Google Drive belum lengkap di Environment Variables Vercel (pastikan GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, dan GOOGLE_REFRESH_TOKEN terisi, lalu lakukan Redeploy).',
+        accountEmail: isTestEnv ? 'test-drive@omov.internal' : 'Belum Terhubung',
       };
     }
 
     try {
+      const auth = this.getOAuth2Client();
+      if (!auth) {
+        return {
+          connected: false,
+          message: 'Gagal menginisialisasi klien OAuth Google Drive.',
+          accountEmail: 'Belum Terhubung',
+        };
+      }
+
       const drive = google.drive({ version: 'v3', auth });
       const about = await drive.about.get({ fields: 'user' });
 
+      const email = about.data.user?.emailAddress || 'Akun Google Terhubung';
+
       return {
         connected: true,
-        message: 'Koneksi ke Google Drive API berhasil!',
-        accountEmail: about.data.user?.emailAddress || 'Akun Google Terhubung',
+        message: `Koneksi ke Google Drive API berhasil! Terhubung dengan akun: ${email}`,
+        accountEmail: email,
       };
     } catch (err: any) {
       return {
         connected: false,
         message: `Gagal menghubungkan ke Google Drive: ${err.message}`,
+        accountEmail: 'Gagal Terhubung',
       };
     }
   }

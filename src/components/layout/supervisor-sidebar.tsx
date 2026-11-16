@@ -104,6 +104,9 @@ export function SupervisorSidebar({ isOpen, onClose }: SidebarProps) {
             <span className="inline-block w-2 h-2 rounded-full bg-status-success-text mr-1.5"></span>
             Versi 1.0 (Produksi)
           </div>
+          <div className="text-[11px] text-text-muted mt-1.5 font-medium">
+            &copy; 2026 Mons Digital Studio
+          </div>
         </div>
       </aside>
     </>

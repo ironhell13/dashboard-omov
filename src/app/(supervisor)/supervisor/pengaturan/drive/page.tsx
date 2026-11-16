@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { HardDrive, CheckCircle2, AlertTriangle, ExternalLink, RefreshCw, FolderGit2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { HardDrive, CheckCircle2, AlertTriangle, AlertCircle, RefreshCw, FolderGit2 } from 'lucide-react';
 
 export default function DriveSettingsPage() {
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
-  const [accountEmail, setAccountEmail] = useState<string>('bca.omov.archive@gmail.com');
+  const [accountEmail, setAccountEmail] = useState<string>('Memeriksa status...');
 
   const handleTestConnection = async () => {
     setIsTesting(true);
@@ -16,21 +16,27 @@ export default function DriveSettingsPage() {
     try {
       const res = await fetch('/api/drive/status');
       const json = await res.json();
-      if (json.success) {
+      if (json.success && json.connected) {
         setIsConnected(true);
         if (json.accountEmail) setAccountEmail(json.accountEmail);
         setTestResult(json.message || 'Koneksi Google Drive API berhasil!');
       } else {
         setIsConnected(false);
-        setTestResult(`Gagal: ${json.message}`);
+        setAccountEmail(json.accountEmail || 'Belum Terhubung');
+        setTestResult(json.message || 'Belum terhubung ke Google Drive');
       }
     } catch (err: any) {
       setIsConnected(false);
+      setAccountEmail('Gagal Terhubung');
       setTestResult(`Error: ${err.message}`);
     } finally {
       setIsTesting(false);
     }
   };
+
+  useEffect(() => {
+    handleTestConnection();
+  }, []);
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -60,16 +66,28 @@ export default function DriveSettingsPage() {
             </div>
           </div>
 
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-status-success-text bg-[#E3F6EC] px-3 py-1 rounded-full">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Terhubung</span>
-          </span>
+          {isConnected === null ? (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-text-muted bg-bg-subtle px-3 py-1 rounded-full border border-border">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
+              <span>Memeriksa...</span>
+            </span>
+          ) : isConnected ? (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-status-success-text bg-[#E3F6EC] px-3 py-1 rounded-full border border-green-200">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Terhubung Aktif</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-[#8A5300] bg-[#FFF3DC] px-3 py-1 rounded-full border border-[#B9D4F3]">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Belum Terhubung</span>
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 rounded-btn bg-bg-subtle border border-border">
             <span className="text-text-muted block mb-1">Akun Google Pemilik:</span>
-            <span className="font-semibold text-text text-sm">bca.omov.archive@gmail.com</span>
+            <span className="font-semibold text-text text-sm break-all">{accountEmail}</span>
           </div>
 
           <div className="p-3.5 rounded-btn bg-bg-subtle border border-border">
@@ -82,8 +100,18 @@ export default function DriveSettingsPage() {
         </div>
 
         {testResult && (
-          <div className="p-3 rounded-input bg-[#E3F6EC] text-[#17714A] text-xs flex items-center gap-2 border border-green-200">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <div
+            className={`p-3 rounded-input text-xs flex items-center gap-2 border ${
+              isConnected
+                ? 'bg-[#E3F6EC] text-[#17714A] border-green-200'
+                : 'bg-[#FFF3DC] text-[#8A5300] border-amber-200'
+            }`}
+          >
+            {isConnected ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+            )}
             <span>{testResult}</span>
           </div>
         )}
@@ -95,7 +123,7 @@ export default function DriveSettingsPage() {
             className="btn-secondary h-10 px-4 text-xs font-semibold gap-2"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isTesting ? 'animate-spin' : ''}`} />
-            <span>{isTesting ? 'Menguji API...' : 'Uji Koneksi Drive'}</span>
+            <span>{isTesting ? 'Menguji API...' : 'Uji Ulang Koneksi Drive'}</span>
           </button>
         </div>
       </div>
@@ -107,7 +135,7 @@ export default function DriveSettingsPage() {
           <span>Panduan Penting Token Refresh Google (SPEC A.13)</span>
         </div>
         <p className="leading-relaxed">
-          Agar arsip otomatis tidak kedaluwarsa setelah 7 hari, pastikan status aplikasi OAuth di Google Cloud Console telah diubah dari <strong>Testing</strong> menjadi <strong>In Production</strong> dengan scope terbatas <code>https://www.googleapis.com/auth/drive.file</code>.
+          Agar arsip otomatis tidak kedaluwarsa setelah 7 hari, pastikan status aplikasi OAuth di Google Cloud Console telah diubah dari <strong>Testing</strong> menjadi <strong>In Production</strong> dengan scope terbatas <code>https://www.googleapis.com/auth/drive.file</code>. Setelah menambahkan variabel di Vercel, pastikan untuk melakukan <strong>Redeploy</strong> proyek agar variabel lingkungan aktif.
         </p>
       </div>
     </div>

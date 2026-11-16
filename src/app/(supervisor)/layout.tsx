@@ -26,6 +26,9 @@ export default function SupervisorLayout({
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1280px] w-full mx-auto">
           {children}
         </main>
+        <footer className="py-4 px-6 text-center text-xs text-text-muted border-t border-border mt-auto bg-white/50">
+          &copy; 2026 Mons Digital Studio
+        </footer>
       </div>
     </div>
   );

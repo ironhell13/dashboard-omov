@@ -150,7 +150,7 @@ export default function LoginPage() {
 
       {/* Footer Notice */}
       <p className="text-center text-xs text-text-muted mt-8">
-        Sistem Informasi Berita Acara ATM &copy; 2026
+        &copy; 2026 Mons Digital Studio
       </p>
     </div>
   );

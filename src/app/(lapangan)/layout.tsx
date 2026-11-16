@@ -14,6 +14,9 @@ export default function LapanganLayout({
       <main className="flex-1 w-full max-w-md mx-auto sm:max-w-xl p-4">
         {children}
       </main>
+      <footer className="py-3 text-center text-[11px] text-text-muted">
+        &copy; 2026 Mons Digital Studio
+      </footer>
       <LapanganBottomNav />
     </div>
   );
