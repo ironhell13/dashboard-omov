@@ -21,11 +21,12 @@ import {
   Save,
   X,
   Eye,
-  Lock
+  Lock,
+  MapPin
 } from 'lucide-react';
 import { PHOTO_SLOTS, GROUPS, PhotoSlot } from '@/types/slot';
 import { getStatusBadgeConfig } from '@/lib/utils';
-import { Report } from '@/types/database';
+import { Report, ReportData } from '@/types/database';
 import { BatchImportModal } from '@/components/lapangan/BatchImportModal';
 
 export default function LapanganDetailPage({
@@ -53,18 +54,29 @@ export default function LapanganDetailPage({
 
   // State untuk Isian Data Teknis Lapangan
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
-  const [fieldData, setFieldData] = useState<{
-    wsid?: string;
-    lokasi?: string;
-    teknisi?: string;
-    tegangan_ups_it?: string | number;
-    grounding_ups_it?: string | number;
-    type_mesin_baru?: string;
-    serial_nomor?: string;
-    alamat?: string;
-  }>({});
+  const [activeModalTab, setActiveModalTab] = useState<'mesin' | 'kelistrikan' | 'pengaman' | 'perangkat'>('mesin');
+  const [fieldData, setFieldData] = useState<ReportData>({});
   const [isSavingFieldData, setIsSavingFieldData] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
+  const handleNestedFieldChange = (parent: keyof ReportData, childPath: string, value: any) => {
+    setFieldData((prev) => {
+      const parentObj = { ...((prev[parent] as any) || {}) };
+      const parts = childPath.split('.');
+      if (parts.length === 1) {
+        parentObj[parts[0]] = value;
+      } else if (parts.length === 2) {
+        parentObj[parts[0]] = {
+          ...(parentObj[parts[0]] || {}),
+          [parts[1]]: value,
+        };
+      }
+      return {
+        ...prev,
+        [parent]: parentObj,
+      };
+    });
+  };
 
   const fetchPhotos = () => {
     fetch(`/api/photos?reportId=${id}`)
@@ -94,11 +106,7 @@ export default function LapanganDetailPage({
             wsid: rep.wsid,
             lokasi: rep.lokasi,
             teknisi: rep.teknisi || rep.data?.teknisi || rep.data?.yang_melakukan || '',
-            tegangan_ups_it: rep.data?.tegangan_ups_it || '',
-            grounding_ups_it: rep.data?.grounding_ups_it || '',
-            type_mesin_baru: rep.data?.type_mesin_baru || '',
-            serial_nomor: rep.data?.serial_nomor || '',
-            alamat: rep.data?.alamat || '',
+            ...(rep.data || {}),
           });
         }
       });
@@ -126,7 +134,9 @@ export default function LapanganDetailPage({
             ...report?.data,
             ...fieldData,
           },
-          teknisi: fieldData.teknisi,
+          teknisi: fieldData.teknisi || fieldData.yang_melakukan,
+          wsid: fieldData.wsid,
+          lokasi: fieldData.lokasi,
         }),
       });
       const json = await res.json();
@@ -570,95 +580,481 @@ export default function LapanganDetailPage({
               </div>
             )}
 
+            {/* Tabs Navigasi Modal */}
+            <div className="flex border-b border-border gap-1 overflow-x-auto pb-1 text-xs">
+              {[
+                { id: 'mesin', label: '1. Mesin & Lokasi' },
+                { id: 'kelistrikan', label: '2. Listrik & Net' },
+                { id: 'pengaman', label: '3. Letak & GPS' },
+                { id: 'perangkat', label: '4. Perangkat' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveModalTab(t.id as any)}
+                  className={`px-3 py-1.5 rounded-t-btn font-semibold whitespace-nowrap transition-colors ${
+                    activeModalTab === t.id
+                      ? 'border-b-2 border-primary text-primary bg-bg-tint/50'
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
             <form onSubmit={handleSaveFieldData} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Nama Teknisi (Yang Melakukan)
-                  </label>
-                  <input
-                    type="text"
-                    disabled={isLocked}
-                    value={fieldData.teknisi || ''}
-                    onChange={(e) => setFieldData({ ...fieldData, teknisi: e.target.value })}
-                    placeholder="Contoh: Ahmad Fauzi / Tim OMOV"
-                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
-                    required
-                  />
-                </div>
+              {/* Tab 1: Mesin & Lokasi */}
+              {activeModalTab === 'mesin' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Nama Teknisi (Yang Melakukan)
+                    </label>
+                    <input
+                      type="text"
+                      disabled={isLocked}
+                      value={fieldData.teknisi || fieldData.yang_melakukan || ''}
+                      onChange={(e) => setFieldData({ ...fieldData, teknisi: e.target.value, yang_melakukan: e.target.value })}
+                      placeholder="Nama Teknisi"
+                      className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Tegangan UPS-IT (Volt)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    disabled={isLocked}
-                    value={fieldData.tegangan_ups_it || ''}
-                    onChange={(e) => setFieldData({ ...fieldData, tegangan_ups_it: e.target.value })}
-                    placeholder="Contoh: 220"
-                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
-                  />
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Tipe Mesin Baru</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.type_mesin_baru || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, type_mesin_baru: e.target.value })}
+                        placeholder="Contoh: NCR 6625"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">SN Baru</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.serial_nomor || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, serial_nomor: e.target.value })}
+                        placeholder="SN Baru"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Grounding UPS-IT (Volt)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    disabled={isLocked}
-                    value={fieldData.grounding_ups_it || ''}
-                    onChange={(e) => setFieldData({ ...fieldData, grounding_ups_it: e.target.value })}
-                    placeholder="Contoh: 1.2"
-                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
-                  />
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Tipe Mesin Lama</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.type_mesin_lama || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, type_mesin_lama: e.target.value })}
+                        placeholder="Contoh: Diebold 5500"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">SN Lama</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.sn_mesin_lama || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, sn_mesin_lama: e.target.value })}
+                        placeholder="SN Lama"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Tipe Mesin Baru
-                  </label>
-                  <input
-                    type="text"
-                    disabled={isLocked}
-                    value={fieldData.type_mesin_baru || ''}
-                    onChange={(e) => setFieldData({ ...fieldData, type_mesin_baru: e.target.value })}
-                    placeholder="Contoh: NCR 6625"
-                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
-                  />
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">WSID Lama</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.wsid_lama || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, wsid_lama: e.target.value })}
+                        placeholder="WSID Lama"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Lokasi Lama</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.lokasi_lama || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, lokasi_lama: e.target.value })}
+                        placeholder="Lokasi Lama"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Serial Nomor (SN) Baru
-                  </label>
-                  <input
-                    type="text"
-                    disabled={isLocked}
-                    value={fieldData.serial_nomor || ''}
-                    onChange={(e) => setFieldData({ ...fieldData, serial_nomor: e.target.value })}
-                    placeholder="Contoh: SN-88992211"
-                    className="form-input text-xs disabled:bg-bg-subtle disabled:text-text-muted"
-                  />
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Alamat Penempatan ATM</label>
+                    <textarea
+                      rows={2}
+                      disabled={isLocked}
+                      value={fieldData.alamat || ''}
+                      onChange={(e) => setFieldData({ ...fieldData, alamat: e.target.value })}
+                      placeholder="Alamat penempatan ATM..."
+                      className="form-input text-xs resize-none disabled:bg-bg-subtle"
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Alamat Lengkap Penempatan
-                  </label>
-                  <textarea
-                    rows={2}
-                    disabled={isLocked}
-                    value={fieldData.alamat || ''}
-                    onChange={(e) => setFieldData({ ...fieldData, alamat: e.target.value })}
-                    placeholder="Alamat penempatan ATM..."
-                    className="form-input text-xs resize-none disabled:bg-bg-subtle disabled:text-text-muted"
-                  />
+              {/* Tab 2: Listrik & Net */}
+              {activeModalTab === 'kelistrikan' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Tegangan UPS (Volt)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        disabled={isLocked}
+                        value={fieldData.tegangan_ups_it || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, tegangan_ups_it: e.target.value })}
+                        placeholder="Contoh: 220"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Grounding (Volt)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        disabled={isLocked}
+                        value={fieldData.grounding_ups_it || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, grounding_ups_it: e.target.value })}
+                        placeholder="Contoh: 1.2"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Initial VSAT</label>
+                    <input
+                      type="text"
+                      disabled={isLocked}
+                      value={fieldData.initial_vsat || ''}
+                      onChange={(e) => setFieldData({ ...fieldData, initial_vsat: e.target.value })}
+                      placeholder="Initial VSAT"
+                      className="form-input text-xs disabled:bg-bg-subtle"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">IP Address</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.ip_address || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, ip_address: e.target.value })}
+                        placeholder="10.x.x.x"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Konfigurasi</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.konfigurasi || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, konfigurasi: e.target.value })}
+                        placeholder="Contoh: TCP/IP"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Tab 3: Letak & GPS */}
+              {activeModalTab === 'pengaman' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Letak Mesin</label>
+                    <input
+                      type="text"
+                      list="letak_mesin_lapangan_list"
+                      disabled={isLocked}
+                      value={fieldData.letak_mesin || ''}
+                      onChange={(e) => setFieldData({ ...fieldData, letak_mesin: e.target.value })}
+                      placeholder="Contoh: Lobby / Indomaret / SPBU / Alfamart"
+                      className="form-input text-xs disabled:bg-bg-subtle"
+                    />
+                    <datalist id="letak_mesin_lapangan_list">
+                      <option value="Lobby / Ruang ATM" />
+                      <option value="Indomaret" />
+                      <option value="Alfamart" />
+                      <option value="SPBU" />
+                      <option value="Drive Thru" />
+                      <option value="Outdoor Kios" />
+                      <option value="Cabang BCA" />
+                    </datalist>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Pengaman Angkur</label>
+                      <select
+                        disabled={isLocked}
+                        value={fieldData.angkur || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, angkur: e.target.value as any })}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      >
+                        <option value="">-- Pilih --</option>
+                        <option value="Ya">Ya (Dynabolt Terpasang)</option>
+                        <option value="Tidak">Tidak</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Vendor Angkur</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.angkur_vendor || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, angkur_vendor: e.target.value })}
+                        placeholder="Contoh: PT TAG"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Alasan Tidak Diangkur (Jika Tidak)</label>
+                    <input
+                      type="text"
+                      disabled={isLocked}
+                      value={fieldData.angkur_alasan || ''}
+                      onChange={(e) => setFieldData({ ...fieldData, angkur_alasan: e.target.value })}
+                      placeholder="Contoh: Lokasi sewa tidak mengizinkan bor"
+                      className="form-input text-xs disabled:bg-bg-subtle"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Exhaust Fan (Jumlah)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        disabled={isLocked}
+                        value={fieldData.exhaust_fan_jumlah || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, exhaust_fan_jumlah: e.target.value })}
+                        placeholder="Jumlah (misal: 1)"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Status Fan</label>
+                      <select
+                        disabled={isLocked}
+                        value={fieldData.exhaust_fan_status || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, exhaust_fan_status: e.target.value as any })}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      >
+                        <option value="">- Status -</option>
+                        <option value="Nyala">Nyala</option>
+                        <option value="Mati">Mati</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Koordinat GPS */}
+                  <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-text">Koordinat GPS Lokasi</span>
+                      {!isLocked && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (navigator.geolocation) {
+                              navigator.geolocation.getCurrentPosition(
+                                (pos) => {
+                                  handleNestedFieldChange('koordinat', 'lat', pos.coords.latitude);
+                                  handleNestedFieldChange('koordinat', 'lng', pos.coords.longitude);
+                                },
+                                (err) => alert('Gagal membaca GPS: ' + err.message)
+                              );
+                            } else {
+                              alert('Browser tidak mendukung GPS');
+                            }
+                          }}
+                          className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          Ambil GPS HP
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Latitude"
+                        disabled={isLocked}
+                        value={fieldData.koordinat?.lat ?? ''}
+                        onChange={(e) => handleNestedFieldChange('koordinat', 'lat', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Longitude"
+                        disabled={isLocked}
+                        value={fieldData.koordinat?.lng ?? ''}
+                        onChange={(e) => handleNestedFieldChange('koordinat', 'lng', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Perangkat & Eksternal */}
+              {activeModalTab === 'perangkat' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Cartridge</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.cartridge || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, cartridge: e.target.value })}
+                        placeholder="4 Kaset"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Reject Bin</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.reject || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, reject: e.target.value })}
+                        placeholder="1 Kaset"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Kunci</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.kunci || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, kunci: e.target.value })}
+                        placeholder="Posisi"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  {/* DVR / Perekam Eksternal */}
+                  <div className="p-2.5 bg-bg-subtle rounded-btn border border-border/50">
+                    <span className="text-[11px] font-bold text-text block mb-1">Perekam Eksternal / DVR</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Merk DVR"
+                        disabled={isLocked}
+                        value={fieldData.perekam_eksternal?.merk || ''}
+                        onChange={(e) => handleNestedFieldChange('perekam_eksternal', 'merk', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Serial Number DVR"
+                        disabled={isLocked}
+                        value={fieldData.perekam_eksternal?.sn || ''}
+                        onChange={(e) => handleNestedFieldChange('perekam_eksternal', 'sn', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Kamera Eksternal */}
+                  <div className="p-2.5 bg-bg-subtle rounded-btn border border-border/50">
+                    <span className="text-[11px] font-bold text-text block mb-1">Kamera Eksternal</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Merk Kamera"
+                        disabled={isLocked}
+                        value={fieldData.kamera_eksternal?.merk || ''}
+                        onChange={(e) => handleNestedFieldChange('kamera_eksternal', 'merk', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Serial Number Kamera"
+                        disabled={isLocked}
+                        value={fieldData.kamera_eksternal?.sn || ''}
+                        onChange={(e) => handleNestedFieldChange('kamera_eksternal', 'sn', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  {/* UPS Eksternal */}
+                  <div className="p-2.5 bg-bg-subtle rounded-btn border border-border/50">
+                    <span className="text-[11px] font-bold text-text block mb-1">UPS Eksternal</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Merk UPS"
+                        disabled={isLocked}
+                        value={fieldData.ups?.merk || ''}
+                        onChange={(e) => handleNestedFieldChange('ups', 'merk', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Serial Number UPS"
+                        disabled={isLocked}
+                        value={fieldData.ups?.sn || ''}
+                        onChange={(e) => handleNestedFieldChange('ups', 'sn', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  {/* LED Eksternal */}
+                  <div className="p-2.5 bg-bg-subtle rounded-btn border border-border/50">
+                    <span className="text-[11px] font-bold text-text block mb-1">Lampu / LED Eksternal</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Merk LED"
+                        disabled={isLocked}
+                        value={fieldData.led?.merk || ''}
+                        onChange={(e) => handleNestedFieldChange('led', 'merk', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Serial Number LED"
+                        disabled={isLocked}
+                        value={fieldData.led?.sn || ''}
+                        onChange={(e) => handleNestedFieldChange('led', 'sn', e.target.value)}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <button

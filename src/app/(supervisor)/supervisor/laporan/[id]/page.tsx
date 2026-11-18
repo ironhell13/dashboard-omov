@@ -181,14 +181,23 @@ export default function SupervisorDetailPage({
     }));
   };
 
-  const handleNestedFieldChange = (parent: keyof ReportData, child: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [parent]: {
-        ...((prev[parent] as any) || {}),
-        [child]: value,
-      },
-    }));
+  const handleNestedFieldChange = (parent: keyof ReportData, childPath: string, value: any) => {
+    setFormData((prev) => {
+      const parentObj = { ...((prev[parent] as any) || {}) };
+      const parts = childPath.split('.');
+      if (parts.length === 1) {
+        parentObj[parts[0]] = value;
+      } else if (parts.length === 2) {
+        parentObj[parts[0]] = {
+          ...(parentObj[parts[0]] || {}),
+          [parts[1]]: value,
+        };
+      }
+      return {
+        ...prev,
+        [parent]: parentObj,
+      };
+    });
   };
 
   const handleReviewPhoto = async (slotKey: string, status: 'diterima' | 'ditolak', note?: string) => {
@@ -836,10 +845,11 @@ export default function SupervisorDetailPage({
                         {key.replace('_', ' ')}
                       </label>
                       <select
-                        value={(formData as any)[key] || 'Terpasang'}
+                        value={(formData as any)[key] || ''}
                         onChange={(e) => handleFieldChange(key as any, e.target.value)}
                         className="form-input text-xs"
                       >
+                        <option value="">-- Pilih Status --</option>
                         <option value="Terpasang">Terpasang</option>
                         <option value="Tidak terpasang">Tidak terpasang</option>
                         <option value="Tidak ada">Tidak ada</option>
@@ -849,10 +859,11 @@ export default function SupervisorDetailPage({
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">MasterKey Triple DES</label>
                     <select
-                      value={formData.masterkey_triple_des || 'Ya'}
+                      value={formData.masterkey_triple_des || ''}
                       onChange={(e) => handleFieldChange('masterkey_triple_des', e.target.value)}
                       className="form-input text-xs"
                     >
+                      <option value="">-- Pilih --</option>
                       <option value="Ya">Ya</option>
                       <option value="Tidak">Tidak</option>
                     </select>
@@ -862,50 +873,226 @@ export default function SupervisorDetailPage({
             )}
 
             {activeDataSection === 'indoor_outdoor' && (
-              <div className="space-y-4">
-                <h3 className="text-base font-semibold text-text pb-2 border-b border-border">
-                  6. Kondisi Indoor & Outdoor
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Neon Sign</label>
-                    <select
-                      value={formData.neon_sign || 'Terpasang'}
-                      onChange={(e) => handleFieldChange('neon_sign', e.target.value)}
-                      className="form-input text-xs"
-                    >
-                      <option value="Terpasang">Terpasang</option>
-                      <option value="Tidak terpasang">Tidak terpasang</option>
-                    </select>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-base font-semibold text-text pb-2 border-b border-border">
+                    6. Kondisi Indoor & Outdoor
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Neon Sign</label>
+                      <select
+                        value={formData.neon_sign || ''}
+                        onChange={(e) => handleFieldChange('neon_sign', e.target.value)}
+                        className="form-input text-xs"
+                      >
+                        <option value="">-- Pilih Status --</option>
+                        <option value="Terpasang">Terpasang</option>
+                        <option value="Tidak terpasang">Tidak terpasang</option>
+                        <option value="Tidak ada">Tidak ada</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Stiker Mesin</label>
+                      <select
+                        value={formData.stiker_mesin || ''}
+                        onChange={(e) => handleFieldChange('stiker_mesin', e.target.value)}
+                        className="form-input text-xs"
+                      >
+                        <option value="">-- Pilih Status --</option>
+                        <option value="Terpasang">Terpasang</option>
+                        <option value="Tidak terpasang">Tidak terpasang</option>
+                        <option value="Tidak ada">Tidak ada</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Kabel Jalur</label>
+                      <input
+                        type="text"
+                        value={formData.kabel_jalur || ''}
+                        onChange={(e) => handleFieldChange('kabel_jalur', e.target.value)}
+                        placeholder="Contoh: Terproteksi pipa PVC"
+                        className="form-input text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Colokan Listrik</label>
+                      <input
+                        type="text"
+                        value={formData.colokan_listrik || ''}
+                        onChange={(e) => handleFieldChange('colokan_listrik', e.target.value)}
+                        placeholder="Contoh: Standar SNI"
+                        className="form-input text-xs"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Stiker Mesin</label>
-                    <select
-                      value={formData.stiker_mesin || 'Terpasang'}
-                      onChange={(e) => handleFieldChange('stiker_mesin', e.target.value)}
-                      className="form-input text-xs"
-                    >
-                      <option value="Terpasang">Terpasang</option>
-                      <option value="Tidak terpasang">Tidak terpasang</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Kabel Jalur</label>
-                    <input
-                      type="text"
-                      value={formData.kabel_jalur || 'Terproteksi pipa PVC'}
-                      onChange={(e) => handleFieldChange('kabel_jalur', e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Colokan Listrik</label>
-                    <input
-                      type="text"
-                      value={formData.colokan_listrik || 'Standar SNI'}
-                      onChange={(e) => handleFieldChange('colokan_listrik', e.target.value)}
-                      className="form-input"
-                    />
+                </div>
+
+                {/* Perangkat Eksternal */}
+                <div className="pt-4 border-t border-border space-y-4">
+                  <h4 className="text-sm font-semibold text-text flex items-center gap-1.5">
+                    Perangkat Eksternal (Perekam/DVR, CCTV, UPS, LED)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Perekam Eksternal / DVR */}
+                    <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
+                      <span className="text-xs font-bold text-text block">Perekam Eksternal / DVR</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Status</label>
+                          <select
+                            value={formData.perekam_eksternal?.status || ''}
+                            onChange={(e) => handleNestedFieldChange('perekam_eksternal', 'status', e.target.value)}
+                            className="form-input text-xs"
+                          >
+                            <option value="">- Status -</option>
+                            <option value="Terpasang">Terpasang</option>
+                            <option value="Tidak terpasang">Tidak terpasang</option>
+                            <option value="Tidak ada">Tidak ada</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Merk</label>
+                          <input
+                            type="text"
+                            placeholder="Merk DVR"
+                            value={formData.perekam_eksternal?.merk || ''}
+                            onChange={(e) => handleNestedFieldChange('perekam_eksternal', 'merk', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Serial Number</label>
+                          <input
+                            type="text"
+                            placeholder="SN DVR"
+                            value={formData.perekam_eksternal?.sn || ''}
+                            onChange={(e) => handleNestedFieldChange('perekam_eksternal', 'sn', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Kamera Eksternal */}
+                    <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
+                      <span className="text-xs font-bold text-text block">Kamera Eksternal</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Status</label>
+                          <select
+                            value={formData.kamera_eksternal?.status || ''}
+                            onChange={(e) => handleNestedFieldChange('kamera_eksternal', 'status', e.target.value)}
+                            className="form-input text-xs"
+                          >
+                            <option value="">- Status -</option>
+                            <option value="Terpasang">Terpasang</option>
+                            <option value="Tidak terpasang">Tidak terpasang</option>
+                            <option value="Tidak ada">Tidak ada</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Merk</label>
+                          <input
+                            type="text"
+                            placeholder="Merk Kamera"
+                            value={formData.kamera_eksternal?.merk || ''}
+                            onChange={(e) => handleNestedFieldChange('kamera_eksternal', 'merk', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Serial Number</label>
+                          <input
+                            type="text"
+                            placeholder="SN Kamera"
+                            value={formData.kamera_eksternal?.sn || ''}
+                            onChange={(e) => handleNestedFieldChange('kamera_eksternal', 'sn', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* UPS Eksternal */}
+                    <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
+                      <span className="text-xs font-bold text-text block">UPS Eksternal</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Status</label>
+                          <select
+                            value={formData.ups?.status || ''}
+                            onChange={(e) => handleNestedFieldChange('ups', 'status', e.target.value)}
+                            className="form-input text-xs"
+                          >
+                            <option value="">- Status -</option>
+                            <option value="Terpasang">Terpasang</option>
+                            <option value="Tidak terpasang">Tidak terpasang</option>
+                            <option value="Tidak ada">Tidak ada</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Merk</label>
+                          <input
+                            type="text"
+                            placeholder="Merk UPS"
+                            value={formData.ups?.merk || ''}
+                            onChange={(e) => handleNestedFieldChange('ups', 'merk', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Serial Number</label>
+                          <input
+                            type="text"
+                            placeholder="SN UPS"
+                            value={formData.ups?.sn || ''}
+                            onChange={(e) => handleNestedFieldChange('ups', 'sn', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LED Eksternal */}
+                    <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
+                      <span className="text-xs font-bold text-text block">Lampu / LED Eksternal</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Status</label>
+                          <select
+                            value={formData.led?.status || ''}
+                            onChange={(e) => handleNestedFieldChange('led', 'status', e.target.value)}
+                            className="form-input text-xs"
+                          >
+                            <option value="">- Status -</option>
+                            <option value="Terpasang">Terpasang</option>
+                            <option value="Tidak terpasang">Tidak terpasang</option>
+                            <option value="Tidak ada">Tidak ada</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Merk</label>
+                          <input
+                            type="text"
+                            placeholder="Merk LED"
+                            value={formData.led?.merk || ''}
+                            onChange={(e) => handleNestedFieldChange('led', 'merk', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-text-muted block">Serial Number</label>
+                          <input
+                            type="text"
+                            placeholder="SN LED"
+                            value={formData.led?.sn || ''}
+                            onChange={(e) => handleNestedFieldChange('led', 'sn', e.target.value)}
+                            className="form-input text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -919,23 +1106,32 @@ export default function SupervisorDetailPage({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">Letak Mesin</label>
-                    <select
-                      value={formData.letak_mesin || 'Lobby / Ruang ATM'}
+                    <input
+                      type="text"
+                      list="letak_mesin_options"
+                      value={formData.letak_mesin || ''}
                       onChange={(e) => handleFieldChange('letak_mesin', e.target.value)}
+                      placeholder="Contoh: Lobby, Indomaret, SPBU, Alfamart"
                       className="form-input text-xs"
-                    >
-                      <option value="Lobby / Ruang ATM">Lobby / Ruang ATM</option>
-                      <option value="Drive Thru">Drive Thru</option>
-                      <option value="Outdoor Kios">Outdoor Kios</option>
-                    </select>
+                    />
+                    <datalist id="letak_mesin_options">
+                      <option value="Lobby / Ruang ATM" />
+                      <option value="Indomaret" />
+                      <option value="Alfamart" />
+                      <option value="SPBU" />
+                      <option value="Drive Thru" />
+                      <option value="Outdoor Kios" />
+                      <option value="Cabang BCA" />
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">Pengaman Angkur</label>
                     <select
-                      value={formData.angkur || 'Ya'}
+                      value={formData.angkur || ''}
                       onChange={(e) => handleFieldChange('angkur', e.target.value)}
                       className="form-input text-xs"
                     >
+                      <option value="">-- Pilih Status Angkur --</option>
                       <option value="Ya">Ya (Dynabolt Terpasang)</option>
                       <option value="Tidak">Tidak</option>
                     </select>
@@ -944,21 +1140,161 @@ export default function SupervisorDetailPage({
                     <label className="block text-xs font-semibold text-text mb-1">Vendor Angkur</label>
                     <input
                       type="text"
-                      value={formData.angkur_vendor || 'PT TAG'}
+                      value={formData.angkur_vendor || ''}
                       onChange={(e) => handleFieldChange('angkur_vendor', e.target.value)}
-                      className="form-input"
+                      placeholder="Contoh: PT TAG"
+                      className="form-input text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Pengaman Pengganti (Jika Tidak Diangkur)
+                    </label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <label className="flex items-center gap-2 text-xs text-text cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.pengaman_pengganti?.dynabolt || false}
+                          onChange={(e) => handleNestedFieldChange('pengaman_pengganti', 'dynabolt', e.target.checked)}
+                          className="rounded text-primary focus:ring-primary w-4 h-4"
+                        />
+                        <span>Dynabolt</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-text cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.pengaman_pengganti?.alarm || false}
+                          onChange={(e) => handleNestedFieldChange('pengaman_pengganti', 'alarm', e.target.checked)}
+                          className="rounded text-primary focus:ring-primary w-4 h-4"
+                        />
+                        <span>Alarm</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Alasan Tidak Diangkur (Jika Tidak)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.angkur_alasan || ''}
+                      onChange={(e) => handleFieldChange('angkur_alasan', e.target.value)}
+                      placeholder="Contoh: Lokasi sewa tidak mengizinkan pengeboran / lantai granit"
+                      className="form-input text-xs"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">Supersite</label>
                     <select
-                      value={formData.supersite || 'Tidak'}
+                      value={formData.supersite || ''}
                       onChange={(e) => handleFieldChange('supersite', e.target.value)}
                       className="form-input text-xs"
                     >
+                      <option value="">-- Pilih Supersite --</option>
                       <option value="Tidak">Tidak</option>
                       <option value="Ya">Ya</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Vendor Supersite</label>
+                    <input
+                      type="text"
+                      value={formData.supersite_vendor || ''}
+                      onChange={(e) => handleFieldChange('supersite_vendor', e.target.value)}
+                      placeholder="Contoh: PT TAG"
+                      className="form-input text-xs"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Alasan Tidak Supersite (Jika Tidak)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.supersite_alasan || ''}
+                      onChange={(e) => handleFieldChange('supersite_alasan', e.target.value)}
+                      placeholder="Contoh: Belum terpasang sistem supersite"
+                      className="form-input text-xs"
+                    />
+                  </div>
+
+                  {/* Exhaust Fan */}
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Exhaust Fan (Jumlah & Status)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.exhaust_fan_jumlah || ''}
+                        onChange={(e) => handleFieldChange('exhaust_fan_jumlah', e.target.value)}
+                        placeholder="Jumlah (misal: 1)"
+                        className="form-input text-xs"
+                      />
+                      <select
+                        value={formData.exhaust_fan_status || ''}
+                        onChange={(e) => handleFieldChange('exhaust_fan_status', e.target.value as any)}
+                        className="form-input text-xs"
+                      >
+                        <option value="">- Status -</option>
+                        <option value="Nyala">Nyala</option>
+                        <option value="Mati">Mati</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Tanggal Email Permintaan Mesin</label>
+                    <input
+                      type="date"
+                      value={formData.tanggal_email_permintaan || ''}
+                      onChange={(e) => handleFieldChange('tanggal_email_permintaan', e.target.value)}
+                      className="form-input text-xs"
+                    />
+                  </div>
+
+                  {/* Koordinat GPS */}
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-text mb-1 flex items-center justify-between">
+                      <span>Koordinat GPS Lokasi (Latitude, Longitude)</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                              (pos) => {
+                                handleNestedFieldChange('koordinat', 'lat', pos.coords.latitude);
+                                handleNestedFieldChange('koordinat', 'lng', pos.coords.longitude);
+                              },
+                              (err) => alert('Gagal membaca GPS: ' + err.message)
+                            );
+                          } else {
+                            alert('Browser tidak mendukung Geolocation');
+                          }
+                        }}
+                        className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        Gunakan GPS Saat Ini
+                      </button>
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Latitude (Contoh: -6.2088)"
+                        value={formData.koordinat?.lat ?? ''}
+                        onChange={(e) => handleNestedFieldChange('koordinat', 'lat', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className="form-input text-xs"
+                      />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Longitude (Contoh: 106.8456)"
+                        value={formData.koordinat?.lng ?? ''}
+                        onChange={(e) => handleNestedFieldChange('koordinat', 'lng', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className="form-input text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -969,18 +1305,19 @@ export default function SupervisorDetailPage({
                 <h3 className="text-base font-semibold text-text pb-2 border-b border-border">
                   8. Penandatangan Berita Acara
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">Kota Penandatanganan</label>
                     <input
                       type="text"
-                      value={formData.kota || 'Jakarta'}
+                      value={formData.kota || ''}
                       onChange={(e) => handleFieldChange('kota', e.target.value)}
-                      className="form-input"
+                      placeholder="Contoh: Jakarta"
+                      className="form-input text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Yang Melakukan (Teknisi Tim Lapangan)</label>
+                    <label className="block text-xs font-semibold text-text mb-1">Yang Melakukan (Teknisi Lapangan)</label>
                     <input
                       type="text"
                       value={formData.yang_melakukan || formData.teknisi || report.teknisi || ''}
@@ -988,16 +1325,28 @@ export default function SupervisorDetailPage({
                         handleFieldChange('yang_melakukan', e.target.value);
                         handleFieldChange('teknisi', e.target.value);
                       }}
-                      className="form-input"
+                      placeholder="Nama Teknisi"
+                      className="form-input text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Mengetahui (Supervisor/BCA)</label>
+                    <label className="block text-xs font-semibold text-text mb-1">Mengetahui (Supervisor / PIC BCA)</label>
                     <input
                       type="text"
-                      value={formData.mengetahui || 'Ahmad Fauzi'}
+                      value={formData.mengetahui || ''}
                       onChange={(e) => handleFieldChange('mengetahui', e.target.value)}
-                      className="form-input"
+                      placeholder="Nama Supervisor / PIC"
+                      className="form-input text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Penandatangan PIC Vendor (Hal 4)</label>
+                    <input
+                      type="text"
+                      value={formData.penandatangan_vendor || ''}
+                      onChange={(e) => handleFieldChange('penandatangan_vendor', e.target.value)}
+                      placeholder="PIC Vendor Waktu Hadir"
+                      className="form-input text-xs"
                     />
                   </div>
                 </div>
@@ -1009,7 +1358,31 @@ export default function SupervisorDetailPage({
                 <h3 className="text-base font-semibold text-text pb-2 border-b border-border">
                   9. BA Waktu Hadir Vendor (Halaman 4)
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Jadwal Aktivasi</label>
+                    <input
+                      type="text"
+                      value={formData.jadwal_aktivasi || ''}
+                      onChange={(e) => handleFieldChange('jadwal_aktivasi', e.target.value)}
+                      placeholder="Contoh: 12 November 2026 atau Jam WIB"
+                      className="form-input text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">Keterangan Tambahan Vendor</label>
+                    <input
+                      type="text"
+                      value={formData.keterangan_vendor || ''}
+                      onChange={(e) => handleFieldChange('keterangan_vendor', e.target.value)}
+                      placeholder="Catatan / keterangan vendor..."
+                      className="form-input text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <span className="text-xs font-bold text-text-muted block">Daftar Kehadiran 8 Vendor:</span>
                   {[
                     { key: 'mesin_online', label: '1. Mesin Online' },
                     { key: 'vendor_instalasi', label: '2. Vendor Instalasi' },
@@ -1026,14 +1399,14 @@ export default function SupervisorDetailPage({
                       </span>
                       <input
                         type="text"
-                        placeholder="Nama Vendor"
+                        placeholder="Nama Vendor (Contoh: ACS, TAG)"
                         value={(formData.vendor_hadir as any)?.[v.key]?.nama || ''}
                         onChange={(e) => handleNestedFieldChange('vendor_hadir', `${v.key}.nama`, e.target.value)}
                         className="form-input text-xs"
                       />
                       <input
                         type="text"
-                        placeholder="Tanggal & Jam WIB"
+                        placeholder="Tanggal & Jam WIB (Contoh: 12/11/2026 14:30 WIB)"
                         value={(formData.vendor_hadir as any)?.[v.key]?.waktu || ''}
                         onChange={(e) => handleNestedFieldChange('vendor_hadir', `${v.key}.waktu`, e.target.value)}
                         className="form-input text-xs"

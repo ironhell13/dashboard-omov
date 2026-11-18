@@ -1,5 +1,5 @@
 import { Report, ReportData } from '@/types/database';
-import { formatTanggalIndonesia, getNamaHariIndonesia, formatTanggalJamWIB } from '@/lib/utils';
+import { formatTanggalIndonesia, getNamaHariIndonesia } from '@/lib/utils';
 import { PHOTO_SLOTS } from '@/types/slot';
 
 export function buildDocumentData(
@@ -18,6 +18,23 @@ export function buildDocumentData(
   const targetTanggal = d.tanggal || report.tanggal;
   const tglTeks = targetTanggal ? formatTanggalIndonesia(targetTanggal) : '-';
   const hariTeks = targetTanggal ? getNamaHariIndonesia(targetTanggal) : '-';
+
+  // Format pengaman pengganti: jika ada dynabolt atau alarm
+  let pengamanPenggantiStr = '-';
+  if (d.pengaman_pengganti) {
+    const list: string[] = [];
+    if (d.pengaman_pengganti.dynabolt) list.push('Dynabolt');
+    if (d.pengaman_pengganti.alarm) list.push('Alarm');
+    if (list.length > 0) pengamanPenggantiStr = list.join(' / ');
+  }
+
+  // Format exhaust fan
+  let exhaustFanStr = '-';
+  if (d.exhaust_fan_jumlah || d.exhaust_fan_status) {
+    const jml = d.exhaust_fan_jumlah || '1';
+    const st = d.exhaust_fan_status || 'Nyala';
+    exhaustFanStr = `${jml} ${st}`;
+  }
 
   const data: Record<string, any> = {
     // Identitas
@@ -54,6 +71,7 @@ export function buildDocumentData(
     perekam: sanitizeVal(d.perekam),
     pin_cover: sanitizeVal(d.pin_cover),
     fdi: sanitizeVal(d.fdi),
+    masterkey_triple_des: sanitizeVal(d.masterkey_triple_des),
     ac: sanitizeVal(d.ac),
 
     // Outdoor & Indoor
@@ -63,24 +81,37 @@ export function buildDocumentData(
     colokan_listrik: sanitizeVal(d.colokan_listrik),
 
     // Perangkat Eksternal
+    perekam_eksternal_status: sanitizeVal(d.perekam_eksternal?.status),
     perekam_eksternal_merk: sanitizeVal(d.perekam_eksternal?.merk),
     perekam_eksternal_sn: sanitizeVal(d.perekam_eksternal?.sn),
+    kamera_eksternal_status: sanitizeVal(d.kamera_eksternal?.status),
     kamera_eksternal_merk: sanitizeVal(d.kamera_eksternal?.merk),
     kamera_eksternal_sn: sanitizeVal(d.kamera_eksternal?.sn),
+    ups_status: sanitizeVal(d.ups?.status),
     ups_merk: sanitizeVal(d.ups?.merk),
     ups_sn: sanitizeVal(d.ups?.sn),
+    led_status: sanitizeVal(d.led?.status),
     led_merk: sanitizeVal(d.led?.merk),
     led_sn: sanitizeVal(d.led?.sn),
 
     // Pengaman & Letak
     letak_mesin: sanitizeVal(d.letak_mesin),
+    angkur: sanitizeVal(d.angkur),
+    angkur_vendor: sanitizeVal(d.angkur_vendor),
+    pengaman_pengganti: pengamanPenggantiStr,
+    angkur_alasan: sanitizeVal(d.angkur_alasan),
+    supersite: sanitizeVal(d.supersite),
+    supersite_vendor: sanitizeVal(d.supersite_vendor),
+    supersite_alasan: sanitizeVal(d.supersite_alasan),
+    exhaust_fan_text: exhaustFanStr,
     tanggal_email_permintaan: sanitizeVal(d.tanggal_email_permintaan),
-    koordinat_text: d.koordinat ? `${d.koordinat.lat}, ${d.koordinat.lng}` : '-',
+    koordinat_text: d.koordinat && d.koordinat.lat ? `${d.koordinat.lat}, ${d.koordinat.lng}` : '-',
 
     // Penandatangan
     yang_melakukan: sanitizeVal(d.yang_melakukan || d.teknisi || report.teknisi),
     mengetahui: sanitizeVal(d.mengetahui),
-    penandatangan_vendor: sanitizeVal(d.penandatangan_vendor),
+    jadwal_aktivasi: sanitizeVal(d.jadwal_aktivasi || tglTeks),
+    penandatangan_vendor: sanitizeVal(d.penandatangan_vendor || d.yang_melakukan || d.teknisi || report.teknisi),
 
     // BA Dynabolt
     type_mesin_lama: sanitizeVal(d.type_mesin_lama),
