@@ -875,6 +875,49 @@ export default function LapanganDetailPage({
                     />
                   </div>
 
+                  {/* Pasang Supersite */}
+                  <div className="p-2.5 bg-bg-subtle rounded-btn border border-border/50 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-semibold text-text mb-1">Pasang Supersite</label>
+                        <select
+                          disabled={isLocked}
+                          value={fieldData.supersite || ''}
+                          onChange={(e) => setFieldData({ ...fieldData, supersite: e.target.value as any })}
+                          className="form-input text-xs disabled:bg-bg-subtle"
+                        >
+                          <option value="">-- Pilih --</option>
+                          <option value="Ya">Ya</option>
+                          <option value="Tidak">Tidak</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-text mb-1">Vendor Supersite</label>
+                        <input
+                          type="text"
+                          disabled={isLocked}
+                          value={fieldData.supersite_vendor || ''}
+                          onChange={(e) => setFieldData({ ...fieldData, supersite_vendor: e.target.value })}
+                          placeholder="Contoh: Pakai lama"
+                          className="form-input text-xs disabled:bg-bg-subtle"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">
+                        Jika Tidak pasang supersite mohon alasannya :
+                      </label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.supersite_alasan || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, supersite_alasan: e.target.value })}
+                        placeholder="Alasan tidak pasang supersite..."
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-semibold text-text mb-1">Exhaust Fan (Jumlah)</label>
@@ -903,10 +946,24 @@ export default function LapanganDetailPage({
                     </div>
                   </div>
 
+                  {/* Tanggal Email Permintaan Mesin */}
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Tanggal Email Permintaan Mesin
+                    </label>
+                    <input
+                      type="date"
+                      disabled={isLocked}
+                      value={fieldData.tanggal_email_permintaan || ''}
+                      onChange={(e) => setFieldData({ ...fieldData, tanggal_email_permintaan: e.target.value })}
+                      className="form-input text-xs disabled:bg-bg-subtle"
+                    />
+                  </div>
+
                   {/* Koordinat GPS */}
                   <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-text">Koordinat GPS Lokasi</span>
+                      <span className="text-xs font-bold text-text">Koordinat GPS Lokasi (Manual / GPS)</span>
                       {!isLocked && (
                         <button
                           type="button"
@@ -914,8 +971,14 @@ export default function LapanganDetailPage({
                             if (navigator.geolocation) {
                               navigator.geolocation.getCurrentPosition(
                                 (pos) => {
-                                  handleNestedFieldChange('koordinat', 'lat', pos.coords.latitude);
-                                  handleNestedFieldChange('koordinat', 'lng', pos.coords.longitude);
+                                  const lat = pos.coords.latitude;
+                                  const lng = pos.coords.longitude;
+                                  handleNestedFieldChange('koordinat', 'lat', lat);
+                                  handleNestedFieldChange('koordinat', 'lng', lng);
+                                  setFieldData((prev) => ({
+                                    ...prev,
+                                    koordinat_manual: `${lat}, ${lng}`,
+                                  }));
                                 },
                                 (err) => alert('Gagal membaca GPS: ' + err.message)
                               );
@@ -930,14 +993,39 @@ export default function LapanganDetailPage({
                         </button>
                       )}
                     </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Koordinat manual (Contoh: -6.17376, 106.62497833)"
+                        disabled={isLocked}
+                        value={fieldData.koordinat_manual || (typeof fieldData.koordinat === 'string' ? fieldData.koordinat : (fieldData.koordinat?.lat ? `${fieldData.koordinat.lat}, ${fieldData.koordinat.lng}` : ''))}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFieldData({
+                            ...fieldData,
+                            koordinat_manual: val,
+                            koordinat: val,
+                          });
+                        }}
+                        className="form-input text-xs disabled:bg-bg-subtle mb-1.5"
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="number"
                         step="any"
                         placeholder="Latitude"
                         disabled={isLocked}
-                        value={fieldData.koordinat?.lat ?? ''}
-                        onChange={(e) => handleNestedFieldChange('koordinat', 'lat', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={typeof fieldData.koordinat === 'object' ? (fieldData.koordinat?.lat ?? '') : ''}
+                        onChange={(e) => {
+                          const latVal = e.target.value ? parseFloat(e.target.value) : undefined;
+                          const curLng = typeof fieldData.koordinat === 'object' ? fieldData.koordinat?.lng : undefined;
+                          setFieldData({
+                            ...fieldData,
+                            koordinat: { lat: latVal, lng: curLng },
+                            koordinat_manual: latVal !== undefined && curLng !== undefined ? `${latVal}, ${curLng}` : (latVal !== undefined ? `${latVal}` : ''),
+                          });
+                        }}
                         className="form-input text-xs disabled:bg-bg-subtle"
                       />
                       <input
@@ -945,8 +1033,16 @@ export default function LapanganDetailPage({
                         step="any"
                         placeholder="Longitude"
                         disabled={isLocked}
-                        value={fieldData.koordinat?.lng ?? ''}
-                        onChange={(e) => handleNestedFieldChange('koordinat', 'lng', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={typeof fieldData.koordinat === 'object' ? (fieldData.koordinat?.lng ?? '') : ''}
+                        onChange={(e) => {
+                          const lngVal = e.target.value ? parseFloat(e.target.value) : undefined;
+                          const curLat = typeof fieldData.koordinat === 'object' ? fieldData.koordinat?.lat : undefined;
+                          setFieldData({
+                            ...fieldData,
+                            koordinat: { lat: curLat, lng: lngVal },
+                            koordinat_manual: curLat !== undefined && lngVal !== undefined ? `${curLat}, ${lngVal}` : (lngVal !== undefined ? `${lngVal}` : ''),
+                          });
+                        }}
                         className="form-input text-xs disabled:bg-bg-subtle"
                       />
                     </div>

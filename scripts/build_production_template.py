@@ -175,9 +175,9 @@ page1_reps = {
     9: make_p_xml(r('Serial Nomor') + tab_colon() + r('{serial_nomor}')),
     10: make_p_xml(
         r('Baru/Relokasi') + tab_colon() + r('{jenis_pekerjaan}') + br() +
-        r('Tegangan Listrik (UPS-IT)') + tab_colon() + r('{tegangan_ups_it} Volt', space=True) +
-        tab() + r('Grounding (UPS-IT)') + tab() + r(': {grounding_ups_it} Volt', space=True),
-        tab1=3100, tab2=5600, tab3=7400
+        r('Tegangan Listrik (UPS-IT)') + tab_colon() + r('{tegangan_ups_it} Volt', space=True) + br() +
+        r('Grounding (UPS-IT)') + tab_colon() + r('{grounding_ups_it} Volt', space=True),
+        tab1=3100
     ),
     11: make_p_xml(r('Initial VSAT') + tab_colon() + r('{initial_vsat}')),
     12: make_p_xml(r('Konfigurasi') + tab_colon() + r('{konfigurasi}')),
@@ -210,36 +210,39 @@ page1_reps = {
     21: make_p_xml(r('AC') + tab_colon() + r('{ac}')),
     22: make_p_xml(
         r('Outdoor') + tab_colon() + r('- Neon Sign') + tab() + r(': {neon_sign}', space=True),
-        tab1=3100, tab2=4600
+        tab1=3100, tab2=4889
     ),
     23: make_p_xml(
         tab() + r(': - Stiker Mesin', space=True) + tab() + r(': {stiker_mesin}', space=True),
-        tab1=3100, tab2=4600
+        tab1=3100, tab2=4889
     ),
     24: make_p_xml(
         r('Indoor') + tab_colon() + r('- Kabel Jalur') + tab() + r(': {kabel_jalur}', space=True),
-        tab1=3100, tab2=4600
+        tab1=3100, tab2=4889
     ),
-    25: make_p_xml(r('Colokan Listrik') + tab_colon() + r('{colokan_listrik}')),
+    25: make_p_xml(
+        tab() + r(': Colokan Listrik', space=True) + tab() + r(': {colokan_listrik}', space=True),
+        tab1=3100, tab2=4889
+    ),
     26: make_p_xml(
-        r('Perekam Eksternal') + tab_colon() + r('{perekam_eksternal_status} - Merk: {perekam_eksternal_merk}', space=True) +
+        tab() + r(': Perekam Eksternal', space=True) + tab() + r(': {perekam_eksternal_status} - Merk: {perekam_eksternal_merk}', space=True) +
         tab() + r('SN: {perekam_eksternal_sn}', space=True),
-        tab1=3100, tab2=6800
+        tab1=3100, tab2=4889, tab3=7800
     ),
     27: make_p_xml(
-        r('Kamera Eksternal') + tab_colon() + r('{kamera_eksternal_status} - Merk: {kamera_eksternal_merk}', space=True) +
+        tab() + r(': Kamera Eksternal', space=True) + tab() + r(': {kamera_eksternal_status} - Merk: {kamera_eksternal_merk}', space=True) +
         tab() + r('SN: {kamera_eksternal_sn}', space=True),
-        tab1=3100, tab2=6800
+        tab1=3100, tab2=4889, tab3=7800
     ),
     28: make_p_xml(
-        r('UPS') + tab_colon() + r('{ups_status} - Merk: {ups_merk}', space=True) +
+        tab() + r(': UPS', space=True) + tab() + r(': {ups_status} - Merk: {ups_merk}', space=True) +
         tab() + r('SN: {ups_sn}', space=True),
-        tab1=3100, tab2=6800
+        tab1=3100, tab2=4889, tab3=7800
     ),
     29: make_p_xml(
-        r('LED') + tab_colon() + r('{led_status} - Merk: {led_merk}', space=True) +
+        tab() + r(': LED', space=True) + tab() + r(': {led_status} - Merk: {led_merk}', space=True) +
         tab() + r('SN: {led_sn}', space=True),
-        tab1=3100, tab2=6800
+        tab1=3100, tab2=4889, tab3=7800
     ),
     31: make_p_xml(r('Letak Mesin') + tab_colon() + r('{letak_mesin}')),
     32: make_p_xml(
@@ -258,10 +261,12 @@ page1_reps = {
         r(' (jika “YA” harap tuliskan nama vendor) : ', space=True) + r('{angkur_vendor}')
     ),
     33: make_p_xml(
-        r('Jika “Tidak” harap info type pengaman pengganti :  {pengaman_dynabolt_box} Dynabold   {pengaman_alarm_box} Alarm   Harap info alasan menggunakan Dynabold/Alarm : ', space=True) +
-        r('{angkur_alasan}')
+        r('Jika “Tidak” harap info type pengaman pengganti :  {pengaman_dynabolt_box} Dynabold   {pengaman_alarm_box} Alarm', space=True) + br() +
+        r('Harap info alasan menggunakan Dynabold/Alarm : ', space=True) + r('{angkur_alasan}')
     ),
-    34: make_p_xml(
+    34: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    35: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    36: make_p_xml(
         r('Pasang Supersite') + tab_colon() +
         '<w:r><w:t>{#supersite_ya_struck}</w:t></w:r>' +
         '<w:r><w:rPr><w:strike /><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr><w:t>Ya</w:t></w:r>' +
@@ -274,16 +279,21 @@ page1_reps = {
         '<w:r><w:t>{/supersite_tidak_struck}{^supersite_tidak_struck}</w:t></w:r>' +
         '<w:r><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr><w:t>Tidak</w:t></w:r>' +
         '<w:r><w:t>{/supersite_tidak_struck}</w:t></w:r>' +
-        r(' (Khusus Jabodetabek, jika “Ya” harap tuliskan nama vendor: ', space=True) + r('{supersite_vendor}')
+        r(' (Khusus Jabodetabek, jika “Ya” harap tuliskan nama vendor: ', space=True) + r('{supersite_vendor})', space=True)
     ),
-    36: make_p_xml(
-        r('Exhaust Fan') + tab_colon() + r('{exhaust_fan_text}') +
-        r('   Jika Tidak pasang supersite mohon alasannya : ', space=True) + r('{supersite_alasan}')
+    37: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    38: make_p_xml(
+        tab() + r(': Exhaust Fan', space=True) + tab() + r(': {exhaust_fan_text}', space=True) + br() +
+        r('Jika Tidak pasang supersite mohon alasannya : ', space=True) + r('{supersite_alasan}'),
+        tab1=3100, tab2=4889
     ),
-    37: make_p_xml(r('Tanggal Email Permintaan Mesin') + tab_colon() + r('{tanggal_email_permintaan}')),
-    38: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="1" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr></w:p>''',
-    40: make_p_xml(r('Koordinat') + tab_colon() + r('{koordinat_text}')),
-    41: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="100" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('{kota}, {tanggal_teks}')}</w:p>''',
+    39: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    40: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    41: make_p_xml(r('Tanggal Email Permintaan Mesin') + tab_colon() + r('{tanggal_email_permintaan}')),
+    42: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    43: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
+    44: make_p_xml(r('Koordinat') + tab_colon() + r('{koordinat_text}')),
+    45: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="80" w:after="40" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('{kota}, {tanggal_teks}')}</w:p>''',
 }
 
 paragraphs = doc_root.findall('.//w:p', {'w': W_NS})
@@ -299,22 +309,25 @@ for idx, xml_str in page1_reps.items():
                 parent.insert(pos, new_p)
                 break
 
-# Fix Body[39] 2-column section: change to clean 1 column layout
+# Neutralize any multi-column or section breaks inside Page 1 (before Table 0)
 body = doc_root.find('.//w:body', {'w': W_NS})
+tables = doc_root.findall('.//w:tbl', {'w': W_NS})
+t0 = tables[0]
+t0_body_pos = list(body).index(t0)
+for p in list(body)[:t0_body_pos]:
+    if p.tag.endswith('p'):
+        pPr = p.find(f'{{{W_NS}}}pPr')
+        if pPr is not None:
+            sectPr = pPr.find(f'{{{W_NS}}}sectPr')
+            if sectPr is not None:
+                pPr.remove(sectPr)
+
+# Fix any remaining 2-column sections in body
 for sectPr in body.findall('.//w:sectPr', {'w': W_NS}):
     cols = sectPr.find(f'{{{W_NS}}}cols')
     if cols is not None and cols.attrib.get(f'{{{W_NS}}}num') == '2':
         cols.clear()
         cols.attrib[f'{{{W_NS}}}space'] = '720'
-
-# Also search inside all pPr for sectPr with 2 columns
-for p in body.findall('.//w:p', {'w': W_NS}):
-    sectPr = p.find(f'.//{{{W_NS}}}sectPr')
-    if sectPr is not None:
-        cols = sectPr.find(f'{{{W_NS}}}cols')
-        if cols is not None and cols.attrib.get(f'{{{W_NS}}}num') == '2':
-            cols.clear()
-            cols.attrib[f'{{{W_NS}}}space'] = '720'
 
 # Helper to replace drawings in cell
 def replace_drawing_in_cell(cell, slot_key):
@@ -342,13 +355,7 @@ def replace_drawing_in_cell(cell, slot_key):
     t = ET.SubElement(r_el, f'{{{W_NS}}}t')
     t.text = f'{{%foto_{slot_key}}}'
 
-def set_cell_text(cell, text):
-    p = cell.find(f'.//{{{W_NS}}}p')
-    if p is None:
-        p = ET.SubElement(cell, f'{{{W_NS}}}p')
-    # Keep only 1 paragraph in cell
-    for extra_p in cell.findall(f'.//{{{W_NS}}}p')[1:]:
-        cell.remove(extra_p)
+def set_p_text(p, text):
     for c in list(p):
         if c.tag != f'{{{W_NS}}}pPr':
             p.remove(c)
@@ -358,6 +365,14 @@ def set_cell_text(cell, text):
     sz.attrib[f'{{{W_NS}}}val'] = '18'
     t = ET.SubElement(r_el, f'{{{W_NS}}}t')
     t.text = text
+
+def set_cell_text(cell, text):
+    p = cell.find(f'.//{{{W_NS}}}p')
+    if p is None:
+        p = ET.SubElement(cell, f'{{{W_NS}}}p')
+    for extra_p in list(cell.findall(f'.//{{{W_NS}}}p'))[1:]:
+        cell.remove(extra_p)
+    set_p_text(p, text)
 
 tables = doc_root.findall('.//w:tbl', {'w': W_NS})
 print(f'Total tables found: {len(tables)}')
@@ -460,6 +475,17 @@ for idx, r_elem in enumerate(all_t1_rows):
         trHeight.attrib[f'{{{W_NS}}}val'] = '1800'
     trHeight.attrib[f'{{{W_NS}}}hRule'] = 'atLeast'
 
+# Ensure Page 2 (Table Foto) starts cleanly on Sheet 2 with explicit pageBreakBefore
+t1_pos = list(body).index(t1)
+p_before_t1 = list(body)[t1_pos - 1]
+if p_before_t1.tag.endswith('p'):
+    pPr = p_before_t1.find(f'{{{W_NS}}}pPr')
+    if pPr is None:
+        pPr = ET.Element(f'{{{W_NS}}}pPr')
+        p_before_t1.insert(0, pPr)
+    if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
+        pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+
 # Ensure no blank page after Table 1:
 # Find Table 1 in body, check paragraphs between Table 1 and Table 2
 t1_body_pos = list(body).index(t1)
@@ -471,12 +497,17 @@ print(f'Paragraphs between Table 1 and Table 2: {len(between_p)}')
 if len(between_p) > 1:
     for p_extra in between_p[:-1]:
         body.remove(p_extra)
-# Ensure the remaining paragraph has a clean next-page sectPr
+# Ensure the remaining paragraph has a clean next-page sectPr and explicit pageBreakBefore
 p_last_between = between_p[-1] if between_p else None
 if p_last_between is not None:
+    pPr = p_last_between.find(f'{{{W_NS}}}pPr')
+    if pPr is None:
+        pPr = ET.Element(f'{{{W_NS}}}pPr')
+        p_last_between.insert(0, pPr)
+    if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
+        pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
     sectPr = p_last_between.find(f'.//{{{W_NS}}}sectPr')
     if sectPr is not None:
-        # Remove type continuous so it transitions directly to Page 3
         type_elem = sectPr.find(f'{{{W_NS}}}type')
         if type_elem is not None:
             sectPr.remove(type_elem)
@@ -567,10 +598,23 @@ set_cell_text(t9_rows[2].findall('.//w:tc', {'w': W_NS})[1], '( {mengetahui} )')
 for p in body.findall('.//w:p', {'w': W_NS}):
     txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
     if 'Jakarta,' in txt and '2026' in txt and ('dynabolt' in txt.lower() or 'pemasangan' in txt.lower() or txt.startswith('Jakarta')):
-        set_cell_text(p, '     {kota}, {tanggal_teks}')
+        set_p_text(p, '     {kota}, {tanggal_teks}')
         break
 
-# Halaman Foto BA Penghancuran HDD: Pastikan dimulai di halaman baru tersendiri (Page Break eksplisit)
+# Halaman 4: Berita Acara Pemasangan Dynabolt (Page Break eksplisit agar Dynabolt di Sheet 4)
+for p in body.findall('.//w:p', {'w': W_NS}):
+    txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
+    if 'Pemasangan Dynabolt' in txt:
+        print('Found BA Dynabolt Header paragraph, inserting explicit pageBreakBefore...')
+        pPr = p.find(f'{{{W_NS}}}pPr')
+        if pPr is None:
+            pPr = ET.Element(f'{{{W_NS}}}pPr')
+            p.insert(0, pPr)
+        if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
+            pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+        break
+
+# Halaman Foto BA Penghancuran HDD: Pastikan dimulai di halaman baru tersendiri (Page Break eksplisit agar HDD di Sheet 5)
 for p in body.findall('.//w:p', {'w': W_NS}):
     txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
     if 'Penghancuran Hard Disk' in txt:

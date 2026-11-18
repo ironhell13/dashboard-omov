@@ -85,7 +85,8 @@ export interface ReportData {
 
   // Lain-lain
   tanggal_email_permintaan?: string;
-  koordinat?: { lat?: number; lng?: number };
+  koordinat?: { lat?: number; lng?: number } | string;
+  koordinat_manual?: string;
 
   // Penandatangan
   kota?: string;

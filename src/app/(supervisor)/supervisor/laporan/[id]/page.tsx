@@ -1266,17 +1266,20 @@ export default function SupervisorDetailPage({
                   </div>
 
                   {/* Koordinat GPS */}
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2 space-y-2 p-3 bg-bg-subtle rounded-btn border border-border/50">
                     <label className="block text-xs font-semibold text-text mb-1 flex items-center justify-between">
-                      <span>Koordinat GPS Lokasi (Latitude, Longitude)</span>
+                      <span>Koordinat GPS Lokasi (Manual / GPS)</span>
                       <button
                         type="button"
                         onClick={() => {
                           if (navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition(
                               (pos) => {
-                                handleNestedFieldChange('koordinat', 'lat', pos.coords.latitude);
-                                handleNestedFieldChange('koordinat', 'lng', pos.coords.longitude);
+                                const lat = pos.coords.latitude;
+                                const lng = pos.coords.longitude;
+                                handleNestedFieldChange('koordinat', 'lat', lat);
+                                handleNestedFieldChange('koordinat', 'lng', lng);
+                                handleFieldChange('koordinat_manual', `${lat}, ${lng}`);
                               },
                               (err) => alert('Gagal membaca GPS: ' + err.message)
                             );
@@ -1290,21 +1293,44 @@ export default function SupervisorDetailPage({
                         Gunakan GPS Saat Ini
                       </button>
                     </label>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Koordinat manual (Contoh: -6.17376, 106.62497833)"
+                        value={formData.koordinat_manual || (typeof formData.koordinat === 'string' ? formData.koordinat : (formData.koordinat?.lat ? `${formData.koordinat.lat}, ${formData.koordinat.lng}` : ''))}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleFieldChange('koordinat_manual', val);
+                          handleFieldChange('koordinat', val);
+                        }}
+                        className="form-input text-xs mb-2"
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <input
                         type="number"
                         step="any"
                         placeholder="Latitude (Contoh: -6.2088)"
-                        value={formData.koordinat?.lat ?? ''}
-                        onChange={(e) => handleNestedFieldChange('koordinat', 'lat', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={typeof formData.koordinat === 'object' ? (formData.koordinat?.lat ?? '') : ''}
+                        onChange={(e) => {
+                          const latVal = e.target.value ? parseFloat(e.target.value) : undefined;
+                          const curLng = typeof formData.koordinat === 'object' ? formData.koordinat?.lng : undefined;
+                          handleFieldChange('koordinat', { lat: latVal, lng: curLng });
+                          handleFieldChange('koordinat_manual', latVal !== undefined && curLng !== undefined ? `${latVal}, ${curLng}` : (latVal !== undefined ? `${latVal}` : ''));
+                        }}
                         className="form-input text-xs"
                       />
                       <input
                         type="number"
                         step="any"
                         placeholder="Longitude (Contoh: 106.8456)"
-                        value={formData.koordinat?.lng ?? ''}
-                        onChange={(e) => handleNestedFieldChange('koordinat', 'lng', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={typeof formData.koordinat === 'object' ? (formData.koordinat?.lng ?? '') : ''}
+                        onChange={(e) => {
+                          const lngVal = e.target.value ? parseFloat(e.target.value) : undefined;
+                          const curLat = typeof formData.koordinat === 'object' ? formData.koordinat?.lat : undefined;
+                          handleFieldChange('koordinat', { lat: curLat, lng: lngVal });
+                          handleFieldChange('koordinat_manual', curLat !== undefined && lngVal !== undefined ? `${curLat}, ${lngVal}` : (lngVal !== undefined ? `${lngVal}` : ''));
+                        }}
                         className="form-input text-xs"
                       />
                     </div>

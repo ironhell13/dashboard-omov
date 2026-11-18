@@ -138,8 +138,25 @@ export function buildDocumentData(
     supersite_vendor: sanitizeVal(d.supersite_vendor),
     supersite_alasan: sanitizeVal(d.supersite_alasan),
     exhaust_fan_text: exhaustFanStr,
-    tanggal_email_permintaan: sanitizeVal(d.tanggal_email_permintaan),
-    koordinat_text: d.koordinat && d.koordinat.lat ? `${d.koordinat.lat}, ${d.koordinat.lng}` : '-',
+    tanggal_email_permintaan: (() => {
+      const raw = sanitizeVal(d.tanggal_email_permintaan);
+      if (raw !== '-' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        return formatTanggalIndonesia(raw);
+      }
+      return raw;
+    })(),
+    koordinat_text: (() => {
+      if (typeof d.koordinat === 'string' && d.koordinat.trim()) {
+        return d.koordinat.trim();
+      }
+      if (d.koordinat && typeof d.koordinat === 'object' && d.koordinat.lat !== undefined && d.koordinat.lng !== undefined) {
+        return `${d.koordinat.lat}, ${d.koordinat.lng}`;
+      }
+      if ((d as any).koordinat_manual) {
+        return String((d as any).koordinat_manual).trim();
+      }
+      return '-';
+    })(),
 
     // Penandatangan
     yang_melakukan: sanitizeVal(d.yang_melakukan || d.teknisi || report.teknisi),
