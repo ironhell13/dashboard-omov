@@ -774,10 +774,18 @@ export default function SupervisorDetailPage({
                     <label className="block text-xs font-semibold text-text mb-1">Konfigurasi</label>
                     <input
                       type="text"
-                      value={formData.konfigurasi || 'TCP/IP'}
+                      list="konfigurasi_list_supervisor"
+                      value={formData.konfigurasi ?? ''}
                       onChange={(e) => handleFieldChange('konfigurasi', e.target.value)}
+                      placeholder="Contoh: TCP/IP"
                       className="form-input"
                     />
+                    <datalist id="konfigurasi_list_supervisor">
+                      <option value="TCP/IP" />
+                      <option value="VSAT" />
+                      <option value="Dial Up" />
+                      <option value="4G / GSM" />
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">IP Address</label>
@@ -839,7 +847,47 @@ export default function SupervisorDetailPage({
                   5. Status Perangkat Mesin
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {['cencon', 'kamera', 'perekam', 'pin_cover', 'fdi', 'ac'].map((key) => (
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1 uppercase">
+                      Kamera
+                    </label>
+                    <input
+                      type="text"
+                      list="kamera_list_supervisor"
+                      value={formData.kamera || ''}
+                      onChange={(e) => handleFieldChange('kamera', e.target.value)}
+                      placeholder="Contoh: Internal & Eksternal (Terpasang)"
+                      className="form-input text-xs"
+                    />
+                    <datalist id="kamera_list_supervisor">
+                      <option value="Internal & Eksternal (Terpasang)" />
+                      <option value="Terpasang" />
+                      <option value="Internal Saja" />
+                      <option value="Eksternal Saja" />
+                      <option value="Tidak terpasang" />
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1 uppercase">
+                      Perekam
+                    </label>
+                    <input
+                      type="text"
+                      list="perekam_list_supervisor"
+                      value={formData.perekam || ''}
+                      onChange={(e) => handleFieldChange('perekam', e.target.value)}
+                      placeholder="Contoh: Internal & Eksternal (Terpasang)"
+                      className="form-input text-xs"
+                    />
+                    <datalist id="perekam_list_supervisor">
+                      <option value="Internal & Eksternal (Terpasang)" />
+                      <option value="Terpasang" />
+                      <option value="Internal Saja" />
+                      <option value="Eksternal Saja" />
+                      <option value="Tidak terpasang" />
+                    </datalist>
+                  </div>
+                  {['cencon', 'pin_cover', 'fdi', 'ac'].map((key) => (
                     <div key={key}>
                       <label className="block text-xs font-semibold text-text mb-1 uppercase">
                         {key.replace('_', ' ')}
@@ -1265,75 +1313,22 @@ export default function SupervisorDetailPage({
                     />
                   </div>
 
-                  {/* Koordinat GPS */}
-                  <div className="md:col-span-2 space-y-2 p-3 bg-bg-subtle rounded-btn border border-border/50">
-                    <label className="block text-xs font-semibold text-text mb-1 flex items-center justify-between">
-                      <span>Koordinat GPS Lokasi (Manual / GPS)</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                              (pos) => {
-                                const lat = pos.coords.latitude;
-                                const lng = pos.coords.longitude;
-                                handleNestedFieldChange('koordinat', 'lat', lat);
-                                handleNestedFieldChange('koordinat', 'lng', lng);
-                                handleFieldChange('koordinat_manual', `${lat}, ${lng}`);
-                              },
-                              (err) => alert('Gagal membaca GPS: ' + err.message)
-                            );
-                          } else {
-                            alert('Browser tidak mendukung Geolocation');
-                          }
-                        }}
-                        className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        Gunakan GPS Saat Ini
-                      </button>
+                  {/* Koordinat GPS Lokasi */}
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Koordinat GPS Lokasi (Latitude, Longitude)
                     </label>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Koordinat manual (Contoh: -6.17376, 106.62497833)"
-                        value={formData.koordinat_manual || (typeof formData.koordinat === 'string' ? formData.koordinat : (formData.koordinat?.lat ? `${formData.koordinat.lat}, ${formData.koordinat.lng}` : ''))}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleFieldChange('koordinat_manual', val);
-                          handleFieldChange('koordinat', val);
-                        }}
-                        className="form-input text-xs mb-2"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Latitude (Contoh: -6.2088)"
-                        value={typeof formData.koordinat === 'object' ? (formData.koordinat?.lat ?? '') : ''}
-                        onChange={(e) => {
-                          const latVal = e.target.value ? parseFloat(e.target.value) : undefined;
-                          const curLng = typeof formData.koordinat === 'object' ? formData.koordinat?.lng : undefined;
-                          handleFieldChange('koordinat', { lat: latVal, lng: curLng });
-                          handleFieldChange('koordinat_manual', latVal !== undefined && curLng !== undefined ? `${latVal}, ${curLng}` : (latVal !== undefined ? `${latVal}` : ''));
-                        }}
-                        className="form-input text-xs"
-                      />
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Longitude (Contoh: 106.8456)"
-                        value={typeof formData.koordinat === 'object' ? (formData.koordinat?.lng ?? '') : ''}
-                        onChange={(e) => {
-                          const lngVal = e.target.value ? parseFloat(e.target.value) : undefined;
-                          const curLat = typeof formData.koordinat === 'object' ? formData.koordinat?.lat : undefined;
-                          handleFieldChange('koordinat', { lat: curLat, lng: lngVal });
-                          handleFieldChange('koordinat_manual', curLat !== undefined && lngVal !== undefined ? `${curLat}, ${lngVal}` : (lngVal !== undefined ? `${lngVal}` : ''));
-                        }}
-                        className="form-input text-xs"
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="Contoh: -6.17376, 106.62497833"
+                      value={formData.koordinat_manual || (typeof formData.koordinat === 'string' ? formData.koordinat : (formData.koordinat?.lat ? `${formData.koordinat.lat}, ${formData.koordinat.lng}` : ''))}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleFieldChange('koordinat_manual', val);
+                        handleFieldChange('koordinat', val);
+                      }}
+                      className="form-input text-xs"
+                    />
                   </div>
                 </div>
               </div>

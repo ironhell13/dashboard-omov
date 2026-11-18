@@ -769,12 +769,19 @@ export default function LapanganDetailPage({
                       <label className="block text-xs font-semibold text-text mb-1">Konfigurasi</label>
                       <input
                         type="text"
+                        list="lapangan_konfigurasi_list"
                         disabled={isLocked}
                         value={fieldData.konfigurasi || ''}
                         onChange={(e) => setFieldData({ ...fieldData, konfigurasi: e.target.value })}
                         placeholder="Contoh: TCP/IP"
                         className="form-input text-xs disabled:bg-bg-subtle"
                       />
+                      <datalist id="lapangan_konfigurasi_list">
+                        <option value="TCP/IP" />
+                        <option value="VSAT" />
+                        <option value="Dial Up" />
+                        <option value="4G / GSM" />
+                      </datalist>
                     </div>
                   </div>
                 </div>
@@ -963,7 +970,9 @@ export default function LapanganDetailPage({
                   {/* Koordinat GPS */}
                   <div className="p-3 bg-bg-subtle rounded-btn space-y-2 border border-border/50">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-text">Koordinat GPS Lokasi (Manual / GPS)</span>
+                      <span className="text-xs font-bold text-text">
+                        Koordinat GPS Lokasi (Latitude, Longitude)
+                      </span>
                       {!isLocked && (
                         <button
                           type="button"
@@ -971,13 +980,11 @@ export default function LapanganDetailPage({
                             if (navigator.geolocation) {
                               navigator.geolocation.getCurrentPosition(
                                 (pos) => {
-                                  const lat = pos.coords.latitude;
-                                  const lng = pos.coords.longitude;
-                                  handleNestedFieldChange('koordinat', 'lat', lat);
-                                  handleNestedFieldChange('koordinat', 'lng', lng);
+                                  const coordStr = `${pos.coords.latitude}, ${pos.coords.longitude}`;
                                   setFieldData((prev) => ({
                                     ...prev,
-                                    koordinat_manual: `${lat}, ${lng}`,
+                                    koordinat: coordStr,
+                                    koordinat_manual: coordStr,
                                   }));
                                 },
                                 (err) => alert('Gagal membaca GPS: ' + err.message)
@@ -996,7 +1003,7 @@ export default function LapanganDetailPage({
                     <div>
                       <input
                         type="text"
-                        placeholder="Koordinat manual (Contoh: -6.17376, 106.62497833)"
+                        placeholder="Contoh: -6.17376, 106.62497833"
                         disabled={isLocked}
                         value={fieldData.koordinat_manual || (typeof fieldData.koordinat === 'string' ? fieldData.koordinat : (fieldData.koordinat?.lat ? `${fieldData.koordinat.lat}, ${fieldData.koordinat.lng}` : ''))}
                         onChange={(e) => {
@@ -1005,42 +1012,6 @@ export default function LapanganDetailPage({
                             ...fieldData,
                             koordinat_manual: val,
                             koordinat: val,
-                          });
-                        }}
-                        className="form-input text-xs disabled:bg-bg-subtle mb-1.5"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Latitude"
-                        disabled={isLocked}
-                        value={typeof fieldData.koordinat === 'object' ? (fieldData.koordinat?.lat ?? '') : ''}
-                        onChange={(e) => {
-                          const latVal = e.target.value ? parseFloat(e.target.value) : undefined;
-                          const curLng = typeof fieldData.koordinat === 'object' ? fieldData.koordinat?.lng : undefined;
-                          setFieldData({
-                            ...fieldData,
-                            koordinat: { lat: latVal, lng: curLng },
-                            koordinat_manual: latVal !== undefined && curLng !== undefined ? `${latVal}, ${curLng}` : (latVal !== undefined ? `${latVal}` : ''),
-                          });
-                        }}
-                        className="form-input text-xs disabled:bg-bg-subtle"
-                      />
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Longitude"
-                        disabled={isLocked}
-                        value={typeof fieldData.koordinat === 'object' ? (fieldData.koordinat?.lng ?? '') : ''}
-                        onChange={(e) => {
-                          const lngVal = e.target.value ? parseFloat(e.target.value) : undefined;
-                          const curLat = typeof fieldData.koordinat === 'object' ? fieldData.koordinat?.lat : undefined;
-                          setFieldData({
-                            ...fieldData,
-                            koordinat: { lat: curLat, lng: lngVal },
-                            koordinat_manual: curLat !== undefined && lngVal !== undefined ? `${curLat}, ${lngVal}` : (lngVal !== undefined ? `${lngVal}` : ''),
                           });
                         }}
                         className="form-input text-xs disabled:bg-bg-subtle"
@@ -1086,6 +1057,48 @@ export default function LapanganDetailPage({
                         placeholder="Posisi"
                         className="form-input text-xs disabled:bg-bg-subtle"
                       />
+                    </div>
+                  </div>
+
+                  {/* Kamera & Perekam (Input Manual) */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Kamera</label>
+                      <input
+                        type="text"
+                        list="lapangan_kamera_list"
+                        disabled={isLocked}
+                        value={fieldData.kamera || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, kamera: e.target.value })}
+                        placeholder="Contoh: Internal & Eksternal (Terpasang)"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <datalist id="lapangan_kamera_list">
+                        <option value="Internal & Eksternal (Terpasang)" />
+                        <option value="Terpasang" />
+                        <option value="Internal Saja" />
+                        <option value="Eksternal Saja" />
+                        <option value="Tidak terpasang" />
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Perekam</label>
+                      <input
+                        type="text"
+                        list="lapangan_perekam_list"
+                        disabled={isLocked}
+                        value={fieldData.perekam || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, perekam: e.target.value })}
+                        placeholder="Contoh: Internal & Eksternal (Terpasang)"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                      <datalist id="lapangan_perekam_list">
+                        <option value="Internal & Eksternal (Terpasang)" />
+                        <option value="Terpasang" />
+                        <option value="Internal Saja" />
+                        <option value="Eksternal Saja" />
+                        <option value="Tidak terpasang" />
+                      </datalist>
                     </div>
                   </div>
 
