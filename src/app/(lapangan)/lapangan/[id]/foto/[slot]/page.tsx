@@ -57,7 +57,9 @@ export default function PhotoStudioPage({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [fineRotation, setFineRotation] = useState(0);
-  const [mode, setMode] = useState<'isi' | 'pas'>('isi');
+  const [mode, setMode] = useState<'isi' | 'pas'>(
+    slotKey === 'ba_hdd' || slot?.tier === 'dokumen' ? 'pas' : 'isi'
+  );
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(0);
   const [autoLevel, setAutoLevel] = useState(false);

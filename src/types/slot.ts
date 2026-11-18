@@ -45,7 +45,7 @@ export const PHOTO_SLOTS: PhotoSlot[] = [
   // 21-23 Destroy HDD
   { key: 'hdd_sebelum', label: 'Sebelum Destroy HDD', grp: 'Destroy HDD', sort: 21, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
   { key: 'hdd_setelah', label: 'Setelah Destroy HDD', grp: 'Destroy HDD', sort: 22, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'ba_hdd', label: 'BA Destroy HDD', grp: 'Destroy HDD', sort: 23, aspect_w: 4, aspect_h: 3, tier: 'dokumen', cell_w_cm: 4.5, cell_h_cm: 3.4 },
+  { key: 'ba_hdd', label: 'BA Destroy HDD', grp: 'Destroy HDD', sort: 23, aspect_w: 3, aspect_h: 4, tier: 'dokumen', cell_w_cm: 4.5, cell_h_cm: 3.4 },
 
   // 24-31 Waktu Hadir Vendor
   { key: 'v_mesin_online', label: 'Mesin Online', grp: 'Waktu Hadir Vendor', sort: 24, aspect_w: 5, aspect_h: 6, tier: 'standar', cell_w_cm: 4.7, cell_h_cm: 5.7 },
@@ -62,7 +62,7 @@ export const PHOTO_SLOTS: PhotoSlot[] = [
   { key: 'dyn_sesudah', label: 'Sesudah pemasangan dynabolt', grp: 'BA Dynabolt', sort: 33, aspect_w: 4, aspect_h: 5, tier: 'standar', cell_w_cm: 5.2, cell_h_cm: 6.5 },
 
   // 34 Halaman 6
-  { key: 'ba_hdd_full', label: 'Foto BA Penghancuran HDD (hal. 6)', grp: 'Otomatis', sort: 34, aspect_w: 7, aspect_h: 10, tier: 'dokumen', cell_w_cm: 13.2, cell_h_cm: 18.6, reuse_of: 'ba_hdd' },
+  { key: 'ba_hdd_full', label: 'Foto BA Penghancuran HDD (hal. 6)', grp: 'Otomatis', sort: 34, aspect_w: 3, aspect_h: 4, tier: 'dokumen', cell_w_cm: 13.2, cell_h_cm: 18.6, reuse_of: 'ba_hdd' },
 ];
 
 export const GROUPS = [
