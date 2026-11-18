@@ -17,35 +17,35 @@ export interface PhotoSlot {
 
 export const PHOTO_SLOTS: PhotoSlot[] = [
   // 1-6 Kelistrikan
-  { key: 'grounding_pln', label: 'Grounding dari PLN', grp: 'Kelistrikan', sort: 1, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'voltage_pln', label: 'Voltage dari PLN', grp: 'Kelistrikan', sort: 2, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'grounding_ups', label: 'Grounding setelah UPS-IT', grp: 'Kelistrikan', sort: 3, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'voltage_ups', label: 'Voltage setelah UPS-IT', grp: 'Kelistrikan', sort: 4, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'stop_kontak', label: 'Stop Kontak Dinding', grp: 'Kelistrikan', sort: 5, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'mcb', label: 'MCB', grp: 'Kelistrikan', sort: 6, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
+  { key: 'grounding_pln', label: 'Grounding dari PLN', grp: 'Kelistrikan', sort: 1, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'voltage_pln', label: 'Voltage dari PLN', grp: 'Kelistrikan', sort: 2, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'grounding_ups', label: 'Grounding setelah UPS-IT', grp: 'Kelistrikan', sort: 3, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'voltage_ups', label: 'Voltage setelah UPS-IT', grp: 'Kelistrikan', sort: 4, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'stop_kontak', label: 'Stop Kontak Dinding', grp: 'Kelistrikan', sort: 5, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'mcb', label: 'MCB', grp: 'Kelistrikan', sort: 6, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
 
   // 7-15 Tampak dan Perangkat
-  { key: 'tampak_mesin', label: 'Tampak Mesin', grp: 'Tampak dan Perangkat', sort: 7, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'perangkat_pendukung', label: 'Perangkat Pendukung', grp: 'Tampak dan Perangkat', sort: 8, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'sudut_kamera', label: 'Sudut Pandang Kamera', grp: 'Tampak dan Perangkat', sort: 9, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'jalur_kabel', label: 'Jalur Kabel Terproteksi', grp: 'Tampak dan Perangkat', sort: 10, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'cencon', label: 'Cencon', grp: 'Tampak dan Perangkat', sort: 11, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'neon_box', label: 'Neon Box', grp: 'Tampak dan Perangkat', sort: 12, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'led_sticker', label: 'LED dan Sticker', grp: 'Tampak dan Perangkat', sort: 13, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'kaset_cadangan', label: 'Kaset Cadangan', grp: 'Tampak dan Perangkat', sort: 14, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'dynabolt', label: 'Dynabolt', grp: 'Tampak dan Perangkat', sort: 15, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
+  { key: 'tampak_mesin', label: 'Tampak Mesin', grp: 'Tampak dan Perangkat', sort: 7, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'perangkat_pendukung', label: 'Perangkat Pendukung', grp: 'Tampak dan Perangkat', sort: 8, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'sudut_kamera', label: 'Sudut Pandang Kamera', grp: 'Tampak dan Perangkat', sort: 9, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'jalur_kabel', label: 'Jalur Kabel Terproteksi', grp: 'Tampak dan Perangkat', sort: 10, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'cencon', label: 'Cencon', grp: 'Tampak dan Perangkat', sort: 11, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'neon_box', label: 'Neon Box', grp: 'Tampak dan Perangkat', sort: 12, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'led_sticker', label: 'LED dan Sticker', grp: 'Tampak dan Perangkat', sort: 13, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'kaset_cadangan', label: 'Kaset Cadangan', grp: 'Tampak dan Perangkat', sort: 14, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'dynabolt', label: 'Dynabolt', grp: 'Tampak dan Perangkat', sort: 15, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
 
   // 16-20 Nomor Seri
-  { key: 'sn_mesin', label: 'S/N Mesin', grp: 'Nomor Seri', sort: 16, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'sn_kamera', label: 'S/N Kamera', grp: 'Nomor Seri', sort: 17, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'sn_dvr', label: 'S/N DVR', grp: 'Nomor Seri', sort: 18, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'sn_ups', label: 'S/N UPS', grp: 'Nomor Seri', sort: 19, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'sn_led', label: 'SN LED', grp: 'Nomor Seri', sort: 20, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.4 },
+  { key: 'sn_mesin', label: 'S/N Mesin', grp: 'Nomor Seri', sort: 16, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'sn_kamera', label: 'S/N Kamera', grp: 'Nomor Seri', sort: 17, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'sn_dvr', label: 'S/N DVR', grp: 'Nomor Seri', sort: 18, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'sn_ups', label: 'S/N UPS', grp: 'Nomor Seri', sort: 19, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'sn_led', label: 'SN LED', grp: 'Nomor Seri', sort: 20, aspect_w: 4, aspect_h: 3, tier: 'detail', cell_w_cm: 4.5, cell_h_cm: 3.1 },
 
   // 21-23 Destroy HDD
-  { key: 'hdd_sebelum', label: 'Sebelum Destroy HDD', grp: 'Destroy HDD', sort: 21, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'hdd_setelah', label: 'Setelah Destroy HDD', grp: 'Destroy HDD', sort: 22, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.4 },
-  { key: 'ba_hdd', label: 'BA Destroy HDD', grp: 'Destroy HDD', sort: 23, aspect_w: 3, aspect_h: 4, tier: 'dokumen', cell_w_cm: 4.5, cell_h_cm: 3.4 },
+  { key: 'hdd_sebelum', label: 'Sebelum Destroy HDD', grp: 'Destroy HDD', sort: 21, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'hdd_setelah', label: 'Setelah Destroy HDD', grp: 'Destroy HDD', sort: 22, aspect_w: 4, aspect_h: 3, tier: 'standar', cell_w_cm: 4.5, cell_h_cm: 3.1 },
+  { key: 'ba_hdd', label: 'BA Destroy HDD', grp: 'Destroy HDD', sort: 23, aspect_w: 3, aspect_h: 4, tier: 'dokumen', cell_w_cm: 4.5, cell_h_cm: 3.1 },
 
   // 24-31 Waktu Hadir Vendor
   { key: 'v_mesin_online', label: 'Mesin Online', grp: 'Waktu Hadir Vendor', sort: 24, aspect_w: 5, aspect_h: 6, tier: 'standar', cell_w_cm: 4.7, cell_h_cm: 5.7 },

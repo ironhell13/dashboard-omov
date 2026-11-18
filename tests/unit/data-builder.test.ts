@@ -93,6 +93,9 @@ describe('Data Builder & Utils (SPEC A.4, A.8, A.12)', () => {
 
     // Letak mesin
     expect(docData.letak_mesin).toBe('Di dalam Indomaret');
+
+    // Waktu vendor otomatis tanggal pengerjaan jika kosong
+    expect(docData.v_mesin_online_waktu).toBe('15 November 2026');
   });
 });
 

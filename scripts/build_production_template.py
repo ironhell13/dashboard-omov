@@ -1,5 +1,6 @@
 import zipfile
 import re
+import copy
 import xml.etree.ElementTree as ET
 
 # 1. Register ALL OpenXML namespaces with their exact official prefixes
@@ -44,7 +45,7 @@ original_doc_xml_str = doc_xml.decode('utf-8')
 root_match = re.search(r'<w:document[^>]*>', original_doc_xml_str)
 orig_root_tag = root_match.group(0) if root_match else None
 
-# Ensure xmlns:a and xmlns:pic are present in root tag
+# Ensure xmlns:a, xmlns:pic, xmlns:wp, xmlns:r are present in root tag
 if orig_root_tag:
     if 'xmlns:a=' not in orig_root_tag:
         orig_root_tag = orig_root_tag.replace(
@@ -102,19 +103,17 @@ for szCs in doc_root.findall('.//w:szCs', {'w': W_NS}):
     szCs.attrib[f'{{{W_NS}}}val'] = '18'
 
 # Helper functions for paragraph generation
-def make_p_xml(p_runs_xml, tab1=3100, tab2=None, tab3=None, spacing_before=1, ind_right=None):
+def make_p_xml(p_runs_xml, tab1=3100, tab2=None, tab3=None, spacing_before=1):
     tabs_xml = f'<w:tab w:val="left" w:pos="{tab1}" />'
     if tab2:
         tabs_xml += f'<w:tab w:val="left" w:pos="{tab2}" />'
     if tab3:
         tabs_xml += f'<w:tab w:val="left" w:pos="{tab3}" />'
-    ind_xml = f'<w:ind w:right="{ind_right}" />' if ind_right else ''
     return f'''<w:p xmlns:w="{W_NS}">
   <w:pPr>
     <w:pStyle w:val="BodyText" />
     <w:tabs>{tabs_xml}</w:tabs>
     <w:spacing w:before="{spacing_before}" />
-    {ind_xml}
     <w:rPr>
       <w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" />
       <w:sz w:val="18" />
@@ -131,7 +130,7 @@ def r(text, space=False, strike=False):
     return f'<w:r><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" />{st}</w:rPr><w:t{sp}>{text}</w:t></w:r>'
 
 def tab_colon():
-    return f'<w:r><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr><w:tab /><w:t>: </w:t></w:r>'
+    return f'<w:r><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr><w:tab /><w:t xml:space="preserve">: </w:t></w:r>'
 
 def tab():
     return f'<w:r><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr><w:tab /></w:r>'
@@ -139,9 +138,35 @@ def tab():
 def br():
     return '<w:r><w:br /></w:r>'
 
+# Title on Page 1: "Berita Acara Instalasi ATM" font 12pt (sz: 24), centered
+p0_xml = f'''<w:p xmlns:w="{W_NS}">
+  <w:pPr>
+    <w:pStyle w:val="Heading1" />
+    <w:jc w:val="center" />
+    <w:spacing w:before="60" w:after="60" />
+    <w:rPr>
+      <w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" />
+      <w:b />
+      <w:sz w:val="24" />
+      <w:szCs w:val="24" />
+      <w:lang w:val="id-ID" />
+    </w:rPr>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" />
+      <w:b />
+      <w:sz w:val="24" />
+      <w:szCs w:val="24" />
+    </w:rPr>
+    <w:t>Berita Acara Instalasi ATM</w:t>
+  </w:r>
+</w:p>'''
+
 # Paragraph replacements on Page 1
 page1_reps = {
-    2: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:pStyle w:val="BodyText" /><w:spacing w:before="1" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('Pada hari {hari}, {tanggal_teks} telah dilakukan {jenis_pekerjaan} mesin ATM BCA dengan data sebagai berikut:', space=True)}</w:p>''',
+    0: p0_xml,
+    2: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:pStyle w:val="BodyText" /><w:spacing w:before="40" w:after="40" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr></w:pPr>{r('Pada hari {hari} ,{tanggal_teks} telah dilakukan Instalasi mesin ATM BCA dengan data sebagai berikut:', space=True)}</w:p>''',
     4: make_p_xml(r('Lokasi') + tab_colon() + r('{lokasi}') + br() + r('WSID') + tab_colon() + r('{wsid}')),
     5: make_p_xml(r('Alamat') + tab_colon() + r('{alamat}')),
     6: make_p_xml(r('Lokasi Lama') + tab_colon() + r('{lokasi_lama}')),
@@ -259,8 +284,6 @@ page1_reps = {
     38: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="1" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr></w:p>''',
     40: make_p_xml(r('Koordinat') + tab_colon() + r('{koordinat_text}')),
     41: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="100" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('{kota}, {tanggal_teks}')}</w:p>''',
-    44: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="1" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('( {yang_melakukan} )', space=True)}</w:p>''',
-    45: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="1" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('( {mengetahui} )', space=True)}</w:p>''',
 }
 
 paragraphs = doc_root.findall('.//w:p', {'w': W_NS})
@@ -275,6 +298,23 @@ for idx, xml_str in page1_reps.items():
                 parent.remove(old_p)
                 parent.insert(pos, new_p)
                 break
+
+# Fix Body[39] 2-column section: change to clean 1 column layout
+body = doc_root.find('.//w:body', {'w': W_NS})
+for sectPr in body.findall('.//w:sectPr', {'w': W_NS}):
+    cols = sectPr.find(f'{{{W_NS}}}cols')
+    if cols is not None and cols.attrib.get(f'{{{W_NS}}}num') == '2':
+        cols.clear()
+        cols.attrib[f'{{{W_NS}}}space'] = '720'
+
+# Also search inside all pPr for sectPr with 2 columns
+for p in body.findall('.//w:p', {'w': W_NS}):
+    sectPr = p.find(f'.//{{{W_NS}}}sectPr')
+    if sectPr is not None:
+        cols = sectPr.find(f'{{{W_NS}}}cols')
+        if cols is not None and cols.attrib.get(f'{{{W_NS}}}num') == '2':
+            cols.clear()
+            cols.attrib[f'{{{W_NS}}}space'] = '720'
 
 # Helper to replace drawings in cell
 def replace_drawing_in_cell(cell, slot_key):
@@ -292,6 +332,9 @@ def replace_drawing_in_cell(cell, slot_key):
     p = cell.find(f'.//{{{W_NS}}}p')
     if p is None:
         p = ET.SubElement(cell, f'{{{W_NS}}}p')
+    for c in list(p):
+        if c.tag != f'{{{W_NS}}}pPr':
+            p.remove(c)
     r_el = ET.SubElement(p, f'{{{W_NS}}}r')
     rPr = ET.SubElement(r_el, f'{{{W_NS}}}rPr')
     sz = ET.SubElement(rPr, f'{{{W_NS}}}sz')
@@ -300,44 +343,143 @@ def replace_drawing_in_cell(cell, slot_key):
     t.text = f'{{%foto_{slot_key}}}'
 
 def set_cell_text(cell, text):
-    for p in cell.findall('.//w:p', {'w': W_NS}):
-        for c in list(p):
-            if c.tag != f'{{{W_NS}}}pPr':
-                p.remove(c)
-        r_el = ET.SubElement(p, f'{{{W_NS}}}r')
-        rPr = ET.SubElement(r_el, f'{{{W_NS}}}rPr')
-        sz = ET.SubElement(rPr, f'{{{W_NS}}}sz')
-        sz.attrib[f'{{{W_NS}}}val'] = '18'
-        t = ET.SubElement(r_el, f'{{{W_NS}}}t')
-        t.text = text
+    p = cell.find(f'.//{{{W_NS}}}p')
+    if p is None:
+        p = ET.SubElement(cell, f'{{{W_NS}}}p')
+    # Keep only 1 paragraph in cell
+    for extra_p in cell.findall(f'.//{{{W_NS}}}p')[1:]:
+        cell.remove(extra_p)
+    for c in list(p):
+        if c.tag != f'{{{W_NS}}}pPr':
+            p.remove(c)
+    r_el = ET.SubElement(p, f'{{{W_NS}}}r')
+    rPr = ET.SubElement(r_el, f'{{{W_NS}}}rPr')
+    sz = ET.SubElement(rPr, f'{{{W_NS}}}sz')
+    sz.attrib[f'{{{W_NS}}}val'] = '18'
+    t = ET.SubElement(r_el, f'{{{W_NS}}}t')
+    t.text = text
 
 tables = doc_root.findall('.//w:tbl', {'w': W_NS})
 print(f'Total tables found: {len(tables)}')
 
-# Table 0: Signatures Page 1
+# Table 0: Signatures Page 1 (Yang melakukan / Mengetahui) - NO TRIPLE DATA
 t0_rows = tables[0].findall('.//w:tr', {'w': W_NS})
 if len(t0_rows) >= 2:
-    set_cell_text(t0_rows[1].findall('.//w:tc', {'w': W_NS})[0], '( {yang_melakukan} )')
-    set_cell_text(t0_rows[1].findall('.//w:tc', {'w': W_NS})[1], '( {mengetahui} )')
+    # Row 0: Headers
+    set_cell_text(t0_rows[0].findall('.//w:tc', {'w': W_NS})[0], 'Yang melakukan,')
+    set_cell_text(t0_rows[0].findall('.//w:tc', {'w': W_NS})[1], 'Mengetahui,')
+    
+    # Row 1: Signature spaces and names (exactly 1 name per column)
+    c0 = t0_rows[1].findall('.//w:tc', {'w': W_NS})[0]
+    for c in list(c0):
+        if c.tag != f'{{{W_NS}}}tcPr': c0.remove(c)
+    # Add 2 empty spacing paragraphs
+    p_sp1 = ET.SubElement(c0, f'{{{W_NS}}}p')
+    p_sp2 = ET.SubElement(c0, f'{{{W_NS}}}p')
+    # Add name paragraph
+    p_name0 = ET.SubElement(c0, f'{{{W_NS}}}p')
+    r0 = ET.SubElement(p_name0, f'{{{W_NS}}}r')
+    rPr0 = ET.SubElement(r0, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr0, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(r0, f'{{{W_NS}}}t').text = '( {yang_melakukan} )'
 
-# Table 1: Photo slots 1-23 (Pages 2-3)
+    c1 = t0_rows[1].findall('.//w:tc', {'w': W_NS})[1]
+    for c in list(c1):
+        if c.tag != f'{{{W_NS}}}tcPr': c1.remove(c)
+    p_sp3 = ET.SubElement(c1, f'{{{W_NS}}}p')
+    p_sp4 = ET.SubElement(c1, f'{{{W_NS}}}p')
+    p_name1 = ET.SubElement(c1, f'{{{W_NS}}}p')
+    r1 = ET.SubElement(p_name1, f'{{{W_NS}}}r')
+    rPr1 = ET.SubElement(r1, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr1, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(r1, f'{{{W_NS}}}t').text = '( {mengetahui} )'
+
+# Table 1: Photo slots (Lembar 2) - EXACTLY 12 ROWS, FITS IN 1 SHEET
 t1 = tables[1]
+t1_rows = t1.findall('.//w:tr', {'w': W_NS})
+
+# Replace existing rows 0 to 9 with proper slots
 t1_slot_mapping = {
     1: ['grounding_pln', 'voltage_pln', 'grounding_ups', 'voltage_ups'],
     3: ['tampak_mesin', 'perangkat_pendukung', 'sudut_kamera', 'jalur_kabel'],
     5: ['stop_kontak', 'mcb', 'sn_mesin', 'sn_kamera'],
     7: ['sn_dvr', 'sn_ups', 'dynabolt', 'kaset_cadangan'],
     9: ['cencon', 'neon_box', 'led_sticker', 'sn_led'],
-    10: ['hdd_sebelum', 'hdd_setelah', 'ba_hdd'],
 }
-t1_rows = t1.findall('.//w:tr', {'w': W_NS})
+
 for r_idx, slot_keys in t1_slot_mapping.items():
     row = t1_rows[r_idx]
     cells = row.findall('.//w:tc', {'w': W_NS})
     for c_idx, slot_key in enumerate(slot_keys):
-        cell = cells[c_idx]
-        replace_drawing_in_cell(cell, slot_key)
-print('Table 1 (23 photo slots) mapped successfully!')
+        replace_drawing_in_cell(cells[c_idx], slot_key)
+
+# Build Row 10 (Header) and Row 11 (Photos) for Destroy HDD, replacing Row 10
+orig_r10 = t1_rows[10]
+
+# Row 10 Header
+r10_header = copy.deepcopy(t1_rows[8]) # Copy header row style
+r10_cells = r10_header.findall('.//w:tc', {'w': W_NS})
+set_cell_text(r10_cells[0], 'Sebelum Destroy HDD')
+set_cell_text(r10_cells[1], 'Setelah Destroy HDD')
+set_cell_text(r10_cells[2], 'BA Destroy HDD')
+set_cell_text(r10_cells[3], '')
+
+# Row 11 Photos
+r11_photo = copy.deepcopy(t1_rows[9]) # Copy photo row style
+r11_cells = r11_photo.findall('.//w:tc', {'w': W_NS})
+set_cell_text(r11_cells[0], '{%foto_hdd_sebelum}')
+set_cell_text(r11_cells[1], '{%foto_hdd_setelah}')
+set_cell_text(r11_cells[2], '{%foto_ba_hdd}')
+set_cell_text(r11_cells[3], '')
+
+# Replace orig_r10 in t1
+pos10 = list(t1).index(orig_r10)
+t1.remove(orig_r10)
+t1.insert(pos10, r10_header)
+t1.insert(pos10 + 1, r11_photo)
+
+# Adjust row heights of Table 1 so all 12 rows fit cleanly on 1 single page
+all_t1_rows = t1.findall('.//w:tr', {'w': W_NS})
+print(f'Table 1 total rows now: {len(all_t1_rows)}')
+for idx, r_elem in enumerate(all_t1_rows):
+    trPr = r_elem.find(f'{{{W_NS}}}trPr')
+    if trPr is None:
+        trPr = ET.SubElement(r_elem, f'{{{W_NS}}}trPr')
+    # cantSplit
+    if trPr.find(f'{{{W_NS}}}cantSplit') is None:
+        ET.SubElement(trPr, f'{{{W_NS}}}cantSplit')
+    # Adjust heights
+    trHeight = trPr.find(f'{{{W_NS}}}trHeight')
+    if trHeight is None:
+        trHeight = ET.SubElement(trPr, f'{{{W_NS}}}trHeight')
+    if idx % 2 == 0:
+        # Header row: 280 dxa (~0.49 cm)
+        trHeight.attrib[f'{{{W_NS}}}val'] = '280'
+    else:
+        # Photo row: 1800 dxa (~3.17 cm)
+        trHeight.attrib[f'{{{W_NS}}}val'] = '1800'
+    trHeight.attrib[f'{{{W_NS}}}hRule'] = 'atLeast'
+
+# Ensure no blank page after Table 1:
+# Find Table 1 in body, check paragraphs between Table 1 and Table 2
+t1_body_pos = list(body).index(t1)
+t2_body_pos = list(body).index(tables[2])
+between_p = [p for p in list(body)[t1_body_pos+1 : t2_body_pos] if p.tag.endswith('p')]
+print(f'Paragraphs between Table 1 and Table 2: {len(between_p)}')
+
+# If there are multiple section breaks, collapse them to 1 clean next-page section break
+if len(between_p) > 1:
+    for p_extra in between_p[:-1]:
+        body.remove(p_extra)
+# Ensure the remaining paragraph has a clean next-page sectPr
+p_last_between = between_p[-1] if between_p else None
+if p_last_between is not None:
+    sectPr = p_last_between.find(f'.//{{{W_NS}}}sectPr')
+    if sectPr is not None:
+        # Remove type continuous so it transitions directly to Page 3
+        type_elem = sectPr.find(f'{{{W_NS}}}type')
+        if type_elem is not None:
+            sectPr.remove(type_elem)
 
 # Table 2: Header Vendor Page 4
 t2 = tables[2]
@@ -361,7 +503,7 @@ set_cell_text(cells_r2[0], '{v_mesin_online_nama}')
 set_cell_text(cells_r2[1], '{v_vendor_instalasi_nama}')
 set_cell_text(cells_r2[2], '{v_vendor_mover_nama}')
 set_cell_text(cells_r2[3], '{v_vendor_cctv_nama}')
-# Row 3: Vendor Times block 1
+# Row 3: Vendor Times block 1 (auto fills with tanggal pengerjaan via data-builder)
 cells_r3 = t3_rows[3].findall('.//w:tc', {'w': W_NS})
 set_cell_text(cells_r3[0], '{v_mesin_online_waktu}')
 set_cell_text(cells_r3[1], '{v_vendor_instalasi_waktu}')
@@ -422,13 +564,26 @@ set_cell_text(t9_rows[2].findall('.//w:tc', {'w': W_NS})[0], '( {yang_melakukan}
 set_cell_text(t9_rows[2].findall('.//w:tc', {'w': W_NS})[1], '( {mengetahui} )')
 
 # Hal 5 Tanggal Dynabolt
-for p in paragraphs[190:]:
+for p in body.findall('.//w:p', {'w': W_NS}):
     txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
-    if 'Jakarta,' in txt and '2026' in txt:
+    if 'Jakarta,' in txt and '2026' in txt and ('dynabolt' in txt.lower() or 'pemasangan' in txt.lower() or txt.startswith('Jakarta')):
         set_cell_text(p, '     {kota}, {tanggal_teks}')
         break
 
-# Hal 6: Full page BA Destroy HDD
+# Halaman Foto BA Penghancuran HDD: Pastikan dimulai di halaman baru tersendiri (Page Break eksplisit)
+for p in body.findall('.//w:p', {'w': W_NS}):
+    txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
+    if 'Penghancuran Hard Disk' in txt:
+        print('Found BA HDD Header paragraph, inserting explicit pageBreakBefore...')
+        pPr = p.find(f'{{{W_NS}}}pPr')
+        if pPr is None:
+            pPr = ET.Element(f'{{{W_NS}}}pPr')
+            p.insert(0, pPr)
+        if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
+            pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+        break
+
+# Map ba_hdd_full on Page 6
 WP_NS = NAMESPACES['wp']
 mapped_ba_hdd_full = False
 for p in doc_root.iterfind('.//w:p', {'w': W_NS}):
@@ -448,9 +603,6 @@ for p in doc_root.iterfind('.//w:p', {'w': W_NS}):
                     mapped_ba_hdd_full = True
                     print('ba_hdd_full successfully mapped on Page 6!')
                     break
-
-if not mapped_ba_hdd_full:
-    print('WARNING: ba_hdd_full was not found by cx > 4000000!')
 
 # Serialize document.xml
 xml_bytes = ET.tostring(doc_root, encoding='utf-8', xml_declaration=True)

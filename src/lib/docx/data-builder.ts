@@ -162,7 +162,17 @@ export function buildDocumentData(
   for (const vk of vendorKeys) {
     const item = (vHadir as any)[vk] || {};
     data[`v_${vk}_nama`] = sanitizeVal(item.nama);
-    data[`v_${vk}_waktu`] = sanitizeVal(item.waktu);
+    
+    const rawWaktu = item.waktu !== undefined && item.waktu !== null ? String(item.waktu).trim() : '';
+    if (!rawWaktu || rawWaktu === '-') {
+      // Otomatis mengisi tanggal pengerjaan jika kosong (SPEC A.12)
+      data[`v_${vk}_waktu`] = tglTeks;
+    } else if (tglTeks !== '-' && !rawWaktu.includes(tglTeks)) {
+      // Jika berisi jam saja (misal 14:44), gabungkan dengan tanggal pengerjaan
+      data[`v_${vk}_waktu`] = `${tglTeks} ${rawWaktu}`;
+    } else {
+      data[`v_${vk}_waktu`] = rawWaktu;
+    }
   }
 
   // Foto 34 Slot
