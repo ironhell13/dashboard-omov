@@ -857,16 +857,28 @@ export default function SupervisorDetailPage({
                     </div>
                   ))}
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">MasterKey Triple DES</label>
+                    <label className="block text-xs font-semibold text-text mb-1">MasterKey Triple desk</label>
                     <select
                       value={formData.masterkey_triple_des || ''}
                       onChange={(e) => handleFieldChange('masterkey_triple_des', e.target.value)}
                       className="form-input text-xs"
                     >
                       <option value="">-- Pilih --</option>
-                      <option value="Ya">Ya</option>
+                      <option value="Ya Digit">Ya Digit</option>
                       <option value="Tidak">Tidak</option>
                     </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Harap info alasan jika tidak :
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.masterkey_alasan || ''}
+                      onChange={(e) => handleFieldChange('masterkey_alasan', e.target.value)}
+                      placeholder="Alasan jika Tidak..."
+                      className="form-input text-xs"
+                    />
                   </div>
                 </div>
               </div>
@@ -1125,19 +1137,20 @@ export default function SupervisorDetailPage({
                     </datalist>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Pengaman Angkur</label>
+                    <label className="block text-xs font-semibold text-text mb-1">Pasang Pengaman Angkur</label>
                     <select
                       value={formData.angkur || ''}
                       onChange={(e) => handleFieldChange('angkur', e.target.value)}
                       className="form-input text-xs"
                     >
-                      <option value="">-- Pilih Status Angkur --</option>
-                      <option value="Ya">Ya (Dynabolt Terpasang)</option>
+                      <option value="">-- Pilih --</option>
+                      <option value="Ya Digit">Ya Digit</option>
+                      <option value="Ya">Ya</option>
                       <option value="Tidak">Tidak</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Vendor Angkur</label>
+                    <label className="block text-xs font-semibold text-text mb-1">Nama Vendor (Jika "YA")</label>
                     <input
                       type="text"
                       value={formData.angkur_vendor || ''}
@@ -1148,7 +1161,7 @@ export default function SupervisorDetailPage({
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-text mb-1">
-                      Pengaman Pengganti (Jika Tidak Diangkur)
+                      Jika "Tidak" harap info type pengaman pengganti :
                     </label>
                     <div className="flex items-center gap-4 mt-2">
                       <label className="flex items-center gap-2 text-xs text-text cursor-pointer">
@@ -1173,7 +1186,7 @@ export default function SupervisorDetailPage({
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-text mb-1">
-                      Alasan Tidak Diangkur (Jika Tidak)
+                      Harap info alasan menggunakan Dynabold/Alarm (Jika Tidak diangkur) :
                     </label>
                     <input
                       type="text"

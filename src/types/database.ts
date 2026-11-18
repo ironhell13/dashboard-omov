@@ -56,7 +56,7 @@ export interface ReportData {
   pin_cover?: string;
   fdi?: string;
   ac?: string;
-  masterkey_triple_des?: 'Ya' | 'Tidak';
+  masterkey_triple_des?: 'Ya' | 'Tidak' | 'Ya Digit';
   masterkey_alasan?: string;
 
   // Outdoor
@@ -73,7 +73,7 @@ export interface ReportData {
 
   // Letak dan Pengaman
   letak_mesin?: string;
-  angkur?: 'Ya' | 'Tidak';
+  angkur?: 'Ya' | 'Tidak' | 'Ya Digit';
   angkur_vendor?: string;
   pengaman_pengganti?: { dynabolt?: boolean; alarm?: boolean };
   angkur_alasan?: string;

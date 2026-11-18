@@ -807,7 +807,7 @@ export default function LapanganDetailPage({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-semibold text-text mb-1">Pengaman Angkur</label>
+                      <label className="block text-xs font-semibold text-text mb-1">Pasang Pengaman Angkur</label>
                       <select
                         disabled={isLocked}
                         value={fieldData.angkur || ''}
@@ -815,7 +815,8 @@ export default function LapanganDetailPage({
                         className="form-input text-xs disabled:bg-bg-subtle"
                       >
                         <option value="">-- Pilih --</option>
-                        <option value="Ya">Ya (Dynabolt Terpasang)</option>
+                        <option value="Ya Digit">Ya Digit</option>
+                        <option value="Ya">Ya</option>
                         <option value="Tidak">Tidak</option>
                       </select>
                     </div>
@@ -833,7 +834,37 @@ export default function LapanganDetailPage({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-text mb-1">Alasan Tidak Diangkur (Jika Tidak)</label>
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Jika "Tidak" harap info type pengaman pengganti :
+                    </label>
+                    <div className="flex items-center gap-4 py-1">
+                      <label className="flex items-center gap-2 text-xs text-text cursor-pointer">
+                        <input
+                          type="checkbox"
+                          disabled={isLocked}
+                          checked={fieldData.pengaman_pengganti?.dynabolt || false}
+                          onChange={(e) => handleNestedFieldChange('pengaman_pengganti', 'dynabolt', e.target.checked)}
+                          className="rounded text-primary focus:ring-primary w-4 h-4 disabled:opacity-50"
+                        />
+                        <span>Dynabolt</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-text cursor-pointer">
+                        <input
+                          type="checkbox"
+                          disabled={isLocked}
+                          checked={fieldData.pengaman_pengganti?.alarm || false}
+                          onChange={(e) => handleNestedFieldChange('pengaman_pengganti', 'alarm', e.target.checked)}
+                          className="rounded text-primary focus:ring-primary w-4 h-4 disabled:opacity-50"
+                        />
+                        <span>Alarm</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text mb-1">
+                      Harap info alasan menggunakan Dynabold/Alarm :
+                    </label>
                     <input
                       type="text"
                       disabled={isLocked}
@@ -957,6 +988,34 @@ export default function LapanganDetailPage({
                         value={fieldData.kunci || ''}
                         onChange={(e) => setFieldData({ ...fieldData, kunci: e.target.value })}
                         placeholder="Posisi"
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  {/* MasterKey Triple DES */}
+                  <div className="p-2.5 bg-bg-subtle rounded-btn border border-border/50 space-y-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">MasterKey Triple desk</label>
+                      <select
+                        disabled={isLocked}
+                        value={fieldData.masterkey_triple_des || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, masterkey_triple_des: e.target.value as any })}
+                        className="form-input text-xs disabled:bg-bg-subtle"
+                      >
+                        <option value="">-- Pilih --</option>
+                        <option value="Ya Digit">Ya Digit</option>
+                        <option value="Tidak">Tidak</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text mb-1">Harap info alasan jika tidak :</label>
+                      <input
+                        type="text"
+                        disabled={isLocked}
+                        value={fieldData.masterkey_alasan || ''}
+                        onChange={(e) => setFieldData({ ...fieldData, masterkey_alasan: e.target.value })}
+                        placeholder="Alasan jika Tidak..."
                         className="form-input text-xs disabled:bg-bg-subtle"
                       />
                     </div>

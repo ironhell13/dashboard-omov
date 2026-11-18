@@ -57,5 +57,42 @@ describe('Data Builder & Utils (SPEC A.4, A.8, A.12)', () => {
     const cancelled = getStatusBadgeConfig('dibatalkan');
     expect(cancelled.label).toBe('Dibatalkan');
   });
+
+  it('memproses data MasterKey, Angkur strikethrough dan Dynabolt/Alarm box dengan benar', async () => {
+    const { buildDocumentData } = await import('@/lib/docx/data-builder');
+    const mockReport: any = {
+      id: 'test-1',
+      wsid: 'Z9KD',
+      lokasi: 'SPBU Otista',
+      jenis_pekerjaan: 'Trade In',
+      tanggal: '2026-11-15',
+      data: {
+        masterkey_triple_des: 'Ya Digit',
+        masterkey_alasan: '',
+        angkur: 'Tidak',
+        pengaman_pengganti: { dynabolt: true, alarm: false },
+        angkur_alasan: 'Lantai granit',
+        letak_mesin: 'Di dalam Indomaret'
+      }
+    };
+
+    const docData = buildDocumentData(mockReport);
+    // MasterKey: Ya Digit -> Tidak dicoret (mk_tidak_struck = true, mk_ya_struck = false)
+    expect(docData.mk_ya_struck).toBe(false);
+    expect(docData.mk_tidak_struck).toBe(true);
+    expect(docData.masterkey_alasan).toBe('-');
+
+    // Angkur: Tidak -> Ya dicoret (angkur_ya_struck = true, angkur_tidak_struck = false)
+    expect(docData.angkur_ya_struck).toBe(true);
+    expect(docData.angkur_tidak_struck).toBe(false);
+
+    // Pengaman pengganti box
+    expect(docData.pengaman_dynabolt_box).toBe('[X]');
+    expect(docData.pengaman_alarm_box).toBe('[  ]');
+    expect(docData.angkur_alasan).toBe('Lantai granit');
+
+    // Letak mesin
+    expect(docData.letak_mesin).toBe('Di dalam Indomaret');
+  });
 });
 

@@ -28,6 +28,31 @@ export function buildDocumentData(
     if (list.length > 0) pengamanPenggantiStr = list.join(' / ');
   }
 
+  // Format checkbox boxes untuk Dynabolt & Alarm
+  const pengaman_dynabolt_box = d.pengaman_pengganti?.dynabolt ? '[X]' : '[  ]';
+  const pengaman_alarm_box = d.pengaman_pengganti?.alarm ? '[X]' : '[  ]';
+
+  // Format MasterKey Triple DES strikethrough logic (coret yang tidak dipilih)
+  const mkVal = String(d.masterkey_triple_des || '').trim().toLowerCase();
+  const isMkYa = mkVal === 'ya' || mkVal === 'ya digit';
+  const isMkTidak = mkVal === 'tidak';
+  const mk_ya_struck = isMkTidak; // Jika Tidak dipilih, Ya dicoret
+  const mk_tidak_struck = isMkYa; // Jika Ya/Ya Digit dipilih, Tidak dicoret
+
+  // Format Angkur strikethrough logic (coret yang tidak dipilih)
+  const angkurVal = String(d.angkur || '').trim().toLowerCase();
+  const isAngkurYa = angkurVal === 'ya' || angkurVal === 'ya digit';
+  const isAngkurTidak = angkurVal === 'tidak';
+  const angkur_ya_struck = isAngkurTidak; // Jika Tidak dipilih, Ya dicoret
+  const angkur_tidak_struck = isAngkurYa; // Jika Ya dipilih, Tidak dicoret
+
+  // Format Supersite strikethrough logic (coret yang tidak dipilih)
+  const superVal = String(d.supersite || '').trim().toLowerCase();
+  const isSuperYa = superVal === 'ya' || superVal === 'ya digit';
+  const isSuperTidak = superVal === 'tidak';
+  const supersite_ya_struck = isSuperTidak;
+  const supersite_tidak_struck = isSuperYa;
+
   // Format exhaust fan
   let exhaustFanStr = '-';
   if (d.exhaust_fan_jumlah || d.exhaust_fan_status) {
@@ -72,6 +97,9 @@ export function buildDocumentData(
     pin_cover: sanitizeVal(d.pin_cover),
     fdi: sanitizeVal(d.fdi),
     masterkey_triple_des: sanitizeVal(d.masterkey_triple_des),
+    masterkey_alasan: sanitizeVal(d.masterkey_alasan),
+    mk_ya_struck,
+    mk_tidak_struck,
     ac: sanitizeVal(d.ac),
 
     // Outdoor & Indoor
@@ -97,10 +125,16 @@ export function buildDocumentData(
     // Pengaman & Letak
     letak_mesin: sanitizeVal(d.letak_mesin),
     angkur: sanitizeVal(d.angkur),
+    angkur_ya_struck,
+    angkur_tidak_struck,
     angkur_vendor: sanitizeVal(d.angkur_vendor),
+    pengaman_dynabolt_box,
+    pengaman_alarm_box,
     pengaman_pengganti: pengamanPenggantiStr,
     angkur_alasan: sanitizeVal(d.angkur_alasan),
     supersite: sanitizeVal(d.supersite),
+    supersite_ya_struck,
+    supersite_tidak_struck,
     supersite_vendor: sanitizeVal(d.supersite_vendor),
     supersite_alasan: sanitizeVal(d.supersite_alasan),
     exhaust_fan_text: exhaustFanStr,
