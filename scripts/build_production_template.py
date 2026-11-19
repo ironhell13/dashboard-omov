@@ -283,7 +283,8 @@ page1_reps = {
     ),
     37: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
     38: make_p_xml(
-        tab() + r(': Exhaust Fan', space=True) + tab() + r(': {exhaust_fan_text}', space=True) + br() +
+        tab() + r(': Exhaust Fan', space=True) + tab() + r(': {exhaust_fan_text}', space=True) +
+        r('   {pengaman_alarm_box} Alarm   [  ]', space=True) + br() +
         r('Jika Tidak pasang supersite mohon alasannya : ', space=True) + r('{supersite_alasan}'),
         tab1=3100, tab2=4889
     ),
@@ -305,6 +306,13 @@ for idx, xml_str in page1_reps.items():
             children = list(parent)
             if old_p in children:
                 pos = children.index(old_p)
+                if idx == 45:
+                    # Enter 2x after Koordinat before {kota}, {tanggal_teks}
+                    p_empty1 = ET.fromstring(f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:pStyle w:val="BodyText" /><w:spacing w:before="0" w:after="0" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr></w:pPr></w:p>''')
+                    p_empty2 = ET.fromstring(f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:pStyle w:val="BodyText" /><w:spacing w:before="0" w:after="0" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr></w:pPr></w:p>''')
+                    parent.insert(pos, p_empty1)
+                    parent.insert(pos + 1, p_empty2)
+                    pos += 2
                 parent.remove(old_p)
                 parent.insert(pos, new_p)
                 break
@@ -377,37 +385,68 @@ def set_cell_text(cell, text):
 tables = doc_root.findall('.//w:tbl', {'w': W_NS})
 print(f'Total tables found: {len(tables)}')
 
-# Table 0: Signatures Page 1 (Yang melakukan / Mengetahui) - NO TRIPLE DATA
+def setup_sig_header(cell, text):
+    for c in list(cell):
+        if c.tag != f'{{{W_NS}}}tcPr':
+            cell.remove(c)
+    p = ET.SubElement(cell, f'{{{W_NS}}}p')
+    pPr = ET.SubElement(p, f'{{{W_NS}}}pPr')
+    ET.SubElement(pPr, f'{{{W_NS}}}pStyle').attrib[f'{{{W_NS}}}val'] = 'TableParagraph'
+    ET.SubElement(pPr, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = 'center'
+    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}line'] = '198'
+    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    rPr_p = ET.SubElement(pPr, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}ascii'] = 'Tahoma'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}hAnsi'] = 'Tahoma'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}cs'] = 'Tahoma'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
+    r_el = ET.SubElement(p, f'{{{W_NS}}}r')
+    rPr = ET.SubElement(r_el, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}ascii'] = 'Tahoma'
+    ET.SubElement(rPr, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}hAnsi'] = 'Tahoma'
+    ET.SubElement(rPr, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}cs'] = 'Tahoma'
+    ET.SubElement(rPr, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(rPr, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(r_el, f'{{{W_NS}}}t').text = text
+
+def setup_sig_name(cell, name_placeholder):
+    for c in list(cell):
+        if c.tag != f'{{{W_NS}}}tcPr':
+            cell.remove(c)
+    for _ in range(2):
+        p_sp = ET.SubElement(cell, f'{{{W_NS}}}p')
+        pPr_sp = ET.SubElement(p_sp, f'{{{W_NS}}}pPr')
+        ET.SubElement(pPr_sp, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}line'] = '198'
+        ET.SubElement(pPr_sp, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    p = ET.SubElement(cell, f'{{{W_NS}}}p')
+    pPr = ET.SubElement(p, f'{{{W_NS}}}pPr')
+    ET.SubElement(pPr, f'{{{W_NS}}}pStyle').attrib[f'{{{W_NS}}}val'] = 'TableParagraph'
+    ET.SubElement(pPr, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = 'center'
+    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}line'] = '198'
+    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    rPr_p = ET.SubElement(pPr, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}ascii'] = 'Tahoma'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}hAnsi'] = 'Tahoma'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}cs'] = 'Tahoma'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(rPr_p, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
+    r_el = ET.SubElement(p, f'{{{W_NS}}}r')
+    rPr = ET.SubElement(r_el, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}ascii'] = 'Tahoma'
+    ET.SubElement(rPr, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}hAnsi'] = 'Tahoma'
+    ET.SubElement(rPr, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}cs'] = 'Tahoma'
+    ET.SubElement(rPr, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(rPr, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
+    ET.SubElement(r_el, f'{{{W_NS}}}t').text = f'( {name_placeholder} )'
+
+# Table 0: Signatures Page 1 (Yang melakukan / Mengetahui) - NO TRIPLE DATA & PERFECT CENTER ALIGNMENT
 t0_rows = tables[0].findall('.//w:tr', {'w': W_NS})
 if len(t0_rows) >= 2:
-    # Row 0: Headers
-    set_cell_text(t0_rows[0].findall('.//w:tc', {'w': W_NS})[0], 'Yang melakukan,')
-    set_cell_text(t0_rows[0].findall('.//w:tc', {'w': W_NS})[1], 'Mengetahui,')
-    
-    # Row 1: Signature spaces and names (exactly 1 name per column)
-    c0 = t0_rows[1].findall('.//w:tc', {'w': W_NS})[0]
-    for c in list(c0):
-        if c.tag != f'{{{W_NS}}}tcPr': c0.remove(c)
-    # Add 2 empty spacing paragraphs
-    p_sp1 = ET.SubElement(c0, f'{{{W_NS}}}p')
-    p_sp2 = ET.SubElement(c0, f'{{{W_NS}}}p')
-    # Add name paragraph
-    p_name0 = ET.SubElement(c0, f'{{{W_NS}}}p')
-    r0 = ET.SubElement(p_name0, f'{{{W_NS}}}r')
-    rPr0 = ET.SubElement(r0, f'{{{W_NS}}}rPr')
-    ET.SubElement(rPr0, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
-    ET.SubElement(r0, f'{{{W_NS}}}t').text = '( {yang_melakukan} )'
-
-    c1 = t0_rows[1].findall('.//w:tc', {'w': W_NS})[1]
-    for c in list(c1):
-        if c.tag != f'{{{W_NS}}}tcPr': c1.remove(c)
-    p_sp3 = ET.SubElement(c1, f'{{{W_NS}}}p')
-    p_sp4 = ET.SubElement(c1, f'{{{W_NS}}}p')
-    p_name1 = ET.SubElement(c1, f'{{{W_NS}}}p')
-    r1 = ET.SubElement(p_name1, f'{{{W_NS}}}r')
-    rPr1 = ET.SubElement(r1, f'{{{W_NS}}}rPr')
-    ET.SubElement(rPr1, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
-    ET.SubElement(r1, f'{{{W_NS}}}t').text = '( {mengetahui} )'
+    setup_sig_header(t0_rows[0].findall('.//w:tc', {'w': W_NS})[0], 'Yang melakukan,')
+    setup_sig_header(t0_rows[0].findall('.//w:tc', {'w': W_NS})[1], 'Mengetahui,')
+    setup_sig_name(t0_rows[1].findall('.//w:tc', {'w': W_NS})[0], '{yang_melakukan}')
+    setup_sig_name(t0_rows[1].findall('.//w:tc', {'w': W_NS})[1], '{mengetahui}')
 
 # Table 1: Photo slots (Lembar 2) - EXACTLY 12 ROWS, FITS IN 1 SHEET
 t1 = tables[1]
@@ -521,41 +560,36 @@ set_cell_text(t2_rows[3].findall('.//w:tc', {'w': W_NS})[2], '{alamat}')
 set_cell_text(t2_rows[4].findall('.//w:tc', {'w': W_NS})[2], '{jenis_pekerjaan_upper}')
 set_cell_text(t2_rows[5].findall('.//w:tc', {'w': W_NS})[2], '{jadwal_aktivasi}')
 
-# Table 3: Vendor Grid Page 4 (Photos, Names, Times)
+# Table 3: Vendor Grid Page 4 (Photos and Dates only - extra row with '-' removed)
 t3 = tables[3]
 t3_rows = t3.findall('.//w:tr', {'w': W_NS})
 # Row 1: Photos block 1
 t3_p_map_1 = ['v_mesin_online', 'v_instalasi', 'v_mover', 'v_cctv']
 for c_idx, k in enumerate(t3_p_map_1):
     replace_drawing_in_cell(t3_rows[1].findall('.//w:tc', {'w': W_NS})[c_idx], k)
-# Row 2: Vendor Names block 1
-cells_r2 = t3_rows[2].findall('.//w:tc', {'w': W_NS})
-set_cell_text(cells_r2[0], '{v_mesin_online_nama}')
-set_cell_text(cells_r2[1], '{v_vendor_instalasi_nama}')
-set_cell_text(cells_r2[2], '{v_vendor_mover_nama}')
-set_cell_text(cells_r2[3], '{v_vendor_cctv_nama}')
+
 # Row 3: Vendor Times block 1 (auto fills with tanggal pengerjaan via data-builder)
 cells_r3 = t3_rows[3].findall('.//w:tc', {'w': W_NS})
 set_cell_text(cells_r3[0], '{v_mesin_online_waktu}')
 set_cell_text(cells_r3[1], '{v_vendor_instalasi_waktu}')
 set_cell_text(cells_r3[2], '{v_vendor_mover_waktu}')
 set_cell_text(cells_r3[3], '{v_vendor_cctv_waktu}')
+
 # Row 5: Photos block 2
 t3_p_map_2 = ['v_mesin', 'v_pkt1', 'v_pkt2', 'v_nb']
 for c_idx, k in enumerate(t3_p_map_2):
     replace_drawing_in_cell(t3_rows[5].findall('.//w:tc', {'w': W_NS})[c_idx], k)
-# Row 6: Vendor Names block 2
-cells_r6 = t3_rows[6].findall('.//w:tc', {'w': W_NS})
-set_cell_text(cells_r6[0], '{v_vendor_mesin_nama}')
-set_cell_text(cells_r6[1], '{v_pkt1_nama}')
-set_cell_text(cells_r6[2], '{v_pkt2_nama}')
-set_cell_text(cells_r6[3], '{v_vendor_nb_nama}')
+
 # Row 7: Vendor Times block 2
 cells_r7 = t3_rows[7].findall('.//w:tc', {'w': W_NS})
 set_cell_text(cells_r7[0], '{v_vendor_mesin_waktu}')
 set_cell_text(cells_r7[1], '{v_pkt1_waktu}')
 set_cell_text(cells_r7[2], '{v_pkt2_waktu}')
 set_cell_text(cells_r7[3], '{v_vendor_nb_waktu}')
+
+# Remove extra rows: Row 6 first, then Row 2
+t3.remove(t3_rows[6])
+t3.remove(t3_rows[2])
 
 # Table 4: Keterangan Vendor Page 4
 t4 = tables[4]
@@ -594,11 +628,38 @@ t9_rows = t9.findall('.//w:tr', {'w': W_NS})
 set_cell_text(t9_rows[2].findall('.//w:tc', {'w': W_NS})[0], '( {yang_melakukan} )')
 set_cell_text(t9_rows[2].findall('.//w:tc', {'w': W_NS})[1], '( {mengetahui} )')
 
-# Hal 5 Tanggal Dynabolt
+# Dynabolt Page: Preserving "Sebelum pemasangan dynabolt" and "Sesudah pemasangan dynabolt" textboxes/drawings
+# 1. Update intro paragraph for Dynabolt
 for p in body.findall('.//w:p', {'w': W_NS}):
     txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
-    if 'Jakarta,' in txt and '2026' in txt and ('dynabolt' in txt.lower() or 'pemasangan' in txt.lower() or txt.startswith('Jakarta')):
-        set_p_text(p, '     {kota}, {tanggal_teks}')
+    if 'sebelum pemasangan dynabolt' in txt.lower() and 'telah dilakukan' in txt.lower():
+        # Keep children 0 and 1 (pPr and drawing with "Sebelum pemasangan dynabolt")
+        for child in list(p)[2:]:
+            p.remove(child)
+        r_dyn_intro = ET.SubElement(p, f'{{{W_NS}}}r')
+        rPr_intro = ET.SubElement(r_dyn_intro, f'{{{W_NS}}}rPr')
+        ET.SubElement(rPr_intro, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+        ET.SubElement(rPr_intro, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
+        t_intro = ET.SubElement(r_dyn_intro, f'{{{W_NS}}}t')
+        t_intro.attrib['xml:space'] = 'preserve'
+        t_intro.text = 'Pada hari {hari}, {tanggal_teks} telah dilakukan pemasangan pengamanan mesin yaitu dynabolt dengan data sbb :'
+        break
+
+# 2. Update date paragraph for Dynabolt (DO NOT wipe out child 1: bracket and child 2: "Sesudah pemasangan dynabolt")
+for p in body.findall('.//w:p', {'w': W_NS}):
+    txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
+    if 'sesudah pemasangan dynabolt' in txt.lower():
+        print('Found Sesudah pemasangan dynabolt paragraph, updating date while preserving drawing...')
+        # Remove only text runs after child 2
+        for child in list(p)[3:]:
+            p.remove(child)
+        r_dyn_date = ET.SubElement(p, f'{{{W_NS}}}r')
+        rPr_date = ET.SubElement(r_dyn_date, f'{{{W_NS}}}rPr')
+        ET.SubElement(rPr_date, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+        ET.SubElement(rPr_date, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
+        t_date = ET.SubElement(r_dyn_date, f'{{{W_NS}}}t')
+        t_date.attrib['xml:space'] = 'preserve'
+        t_date.text = '     {kota}, {tanggal_teks}'
         break
 
 # Halaman 4: Berita Acara Pemasangan Dynabolt (Page Break eksplisit agar Dynabolt di Sheet 4)
