@@ -102,6 +102,22 @@ for sz in doc_root.findall('.//w:sz', {'w': W_NS}):
 for szCs in doc_root.findall('.//w:szCs', {'w': W_NS}):
     szCs.attrib[f'{{{W_NS}}}val'] = '18'
 
+def make_tiny_p(sectPr=None):
+    p = ET.Element(f'{{{W_NS}}}p')
+    pPr = ET.SubElement(p, f'{{{W_NS}}}pPr')
+    ET.SubElement(pPr, f'{{{W_NS}}}pStyle').attrib[f'{{{W_NS}}}val'] = 'BodyText'
+    sp = ET.SubElement(pPr, f'{{{W_NS}}}spacing')
+    sp.attrib[f'{{{W_NS}}}before'] = '0'
+    sp.attrib[f'{{{W_NS}}}after'] = '0'
+    sp.attrib[f'{{{W_NS}}}line'] = '20'
+    sp.attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    rPr = ET.SubElement(pPr, f'{{{W_NS}}}rPr')
+    ET.SubElement(rPr, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '2'
+    ET.SubElement(rPr, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '2'
+    if sectPr is not None:
+        pPr.append(sectPr)
+    return p
+
 # Helper functions for paragraph generation
 def make_p_xml(p_runs_xml, tab1=3100, tab2=None, tab3=None, spacing_before=1):
     tabs_xml = f'<w:tab w:val="left" w:pos="{tab1}" />'
@@ -284,7 +300,7 @@ page1_reps = {
     37: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
     38: make_p_xml(
         tab() + r(': Exhaust Fan', space=True) + tab() + r(': {exhaust_fan_text}', space=True) +
-        r('   {pengaman_alarm_box} Alarm   [  ]', space=True) + br() +
+        r('   [  ]    [  ] Mati', space=True) + br() +
         r('Jika Tidak pasang supersite mohon alasannya : ', space=True) + r('{supersite_alasan}'),
         tab1=3100, tab2=4889
     ),
@@ -294,7 +310,19 @@ page1_reps = {
     42: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
     43: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="0" w:after="0" /><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>''',
     44: make_p_xml(r('Koordinat') + tab_colon() + r('{koordinat_text}')),
-    45: f'''<w:p xmlns:w="{W_NS}"><w:pPr><w:spacing w:before="80" w:after="40" /><w:rPr><w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" /><w:sz w:val="18" /></w:rPr></w:pPr>{r('{kota}, {tanggal_teks}')}</w:p>''',
+    45: f'''<w:p xmlns:w="{W_NS}">
+  <w:pPr>
+    <w:pStyle w:val="BodyText" />
+    <w:ind w:left="684" />
+    <w:spacing w:before="80" w:after="40" />
+    <w:rPr>
+      <w:rFonts w:ascii="Tahoma" w:hAnsi="Tahoma" w:cs="Tahoma" />
+      <w:sz w:val="18" />
+      <w:szCs w:val="18" />
+    </w:rPr>
+  </w:pPr>
+  {r('{kota}, {tanggal_teks}')}
+</w:p>''',
 }
 
 paragraphs = doc_root.findall('.//w:p', {'w': W_NS})
@@ -385,16 +413,20 @@ def set_cell_text(cell, text):
 tables = doc_root.findall('.//w:tbl', {'w': W_NS})
 print(f'Total tables found: {len(tables)}')
 
-def setup_sig_header(cell, text):
+def setup_sig_header(cell, text, ind_left="50", jc_val=None):
     for c in list(cell):
         if c.tag != f'{{{W_NS}}}tcPr':
             cell.remove(c)
     p = ET.SubElement(cell, f'{{{W_NS}}}p')
     pPr = ET.SubElement(p, f'{{{W_NS}}}pPr')
     ET.SubElement(pPr, f'{{{W_NS}}}pStyle').attrib[f'{{{W_NS}}}val'] = 'TableParagraph'
-    ET.SubElement(pPr, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = 'center'
-    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}line'] = '198'
-    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    sp = ET.SubElement(pPr, f'{{{W_NS}}}spacing')
+    sp.attrib[f'{{{W_NS}}}line'] = '198'
+    sp.attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    if ind_left:
+        ET.SubElement(pPr, f'{{{W_NS}}}ind').attrib[f'{{{W_NS}}}left'] = ind_left
+    if jc_val:
+        ET.SubElement(pPr, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = jc_val
     rPr_p = ET.SubElement(pPr, f'{{{W_NS}}}rPr')
     ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}ascii'] = 'Tahoma'
     ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}hAnsi'] = 'Tahoma'
@@ -410,21 +442,34 @@ def setup_sig_header(cell, text):
     ET.SubElement(rPr, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
     ET.SubElement(r_el, f'{{{W_NS}}}t').text = text
 
-def setup_sig_name(cell, name_placeholder):
+def setup_sig_name(cell, name_placeholder, ind_left="50", jc_val=None):
     for c in list(cell):
         if c.tag != f'{{{W_NS}}}tcPr':
             cell.remove(c)
     for _ in range(2):
         p_sp = ET.SubElement(cell, f'{{{W_NS}}}p')
         pPr_sp = ET.SubElement(p_sp, f'{{{W_NS}}}pPr')
-        ET.SubElement(pPr_sp, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}line'] = '198'
-        ET.SubElement(pPr_sp, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+        ET.SubElement(pPr_sp, f'{{{W_NS}}}pStyle').attrib[f'{{{W_NS}}}val'] = 'TableParagraph'
+        sp = ET.SubElement(pPr_sp, f'{{{W_NS}}}spacing')
+        sp.attrib[f'{{{W_NS}}}line'] = '198'
+        sp.attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+        if ind_left:
+            ET.SubElement(pPr_sp, f'{{{W_NS}}}ind').attrib[f'{{{W_NS}}}left'] = ind_left
+        if jc_val:
+            ET.SubElement(pPr_sp, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = jc_val
+        rPr_sp = ET.SubElement(pPr_sp, f'{{{W_NS}}}rPr')
+        ET.SubElement(rPr_sp, f'{{{W_NS}}}sz').attrib[f'{{{W_NS}}}val'] = '18'
+        ET.SubElement(rPr_sp, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
     p = ET.SubElement(cell, f'{{{W_NS}}}p')
     pPr = ET.SubElement(p, f'{{{W_NS}}}pPr')
     ET.SubElement(pPr, f'{{{W_NS}}}pStyle').attrib[f'{{{W_NS}}}val'] = 'TableParagraph'
-    ET.SubElement(pPr, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = 'center'
-    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}line'] = '198'
-    ET.SubElement(pPr, f'{{{W_NS}}}spacing').attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    sp = ET.SubElement(pPr, f'{{{W_NS}}}spacing')
+    sp.attrib[f'{{{W_NS}}}line'] = '198'
+    sp.attrib[f'{{{W_NS}}}lineRule'] = 'exact'
+    if ind_left:
+        ET.SubElement(pPr, f'{{{W_NS}}}ind').attrib[f'{{{W_NS}}}left'] = ind_left
+    if jc_val:
+        ET.SubElement(pPr, f'{{{W_NS}}}jc').attrib[f'{{{W_NS}}}val'] = jc_val
     rPr_p = ET.SubElement(pPr, f'{{{W_NS}}}rPr')
     ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}ascii'] = 'Tahoma'
     ET.SubElement(rPr_p, f'{{{W_NS}}}rFonts').attrib[f'{{{W_NS}}}hAnsi'] = 'Tahoma'
@@ -440,13 +485,13 @@ def setup_sig_name(cell, name_placeholder):
     ET.SubElement(rPr, f'{{{W_NS}}}szCs').attrib[f'{{{W_NS}}}val'] = '18'
     ET.SubElement(r_el, f'{{{W_NS}}}t').text = f'( {name_placeholder} )'
 
-# Table 0: Signatures Page 1 (Yang melakukan / Mengetahui) - NO TRIPLE DATA & PERFECT CENTER ALIGNMENT
+# Table 0: Signatures Page 1 (Yang melakukan / Mengetahui) - NO TRIPLE DATA & PERFECT VERTICAL ALIGNMENT
 t0_rows = tables[0].findall('.//w:tr', {'w': W_NS})
 if len(t0_rows) >= 2:
-    setup_sig_header(t0_rows[0].findall('.//w:tc', {'w': W_NS})[0], 'Yang melakukan,')
-    setup_sig_header(t0_rows[0].findall('.//w:tc', {'w': W_NS})[1], 'Mengetahui,')
-    setup_sig_name(t0_rows[1].findall('.//w:tc', {'w': W_NS})[0], '{yang_melakukan}')
-    setup_sig_name(t0_rows[1].findall('.//w:tc', {'w': W_NS})[1], '{mengetahui}')
+    setup_sig_header(t0_rows[0].findall('.//w:tc', {'w': W_NS})[0], 'Yang melakukan,', ind_left="50", jc_val=None)
+    setup_sig_header(t0_rows[0].findall('.//w:tc', {'w': W_NS})[1], 'Mengetahui,', ind_left="2085", jc_val="center")
+    setup_sig_name(t0_rows[1].findall('.//w:tc', {'w': W_NS})[0], '{yang_melakukan}', ind_left="50", jc_val=None)
+    setup_sig_name(t0_rows[1].findall('.//w:tc', {'w': W_NS})[1], '{mengetahui}', ind_left="2085", jc_val="center")
 
 # Table 1: Photo slots (Lembar 2) - EXACTLY 12 ROWS, FITS IN 1 SHEET
 t1 = tables[1]
@@ -514,42 +559,68 @@ for idx, r_elem in enumerate(all_t1_rows):
         trHeight.attrib[f'{{{W_NS}}}val'] = '1800'
     trHeight.attrib[f'{{{W_NS}}}hRule'] = 'atLeast'
 
-# Ensure Page 2 (Table Foto) starts cleanly on Sheet 2 with explicit pageBreakBefore
+# Sambungan Lembar 1 -> 2:
+# Sisakan SATU paragraf tiny setelah Table 0 sebagai pembawa sectPr (default nextPage).
+# Hapus paragraf kosong lain dan pastikan TANPA pageBreakBefore.
+t0_pos = list(body).index(tables[0])
 t1_pos = list(body).index(t1)
-p_before_t1 = list(body)[t1_pos - 1]
-if p_before_t1.tag.endswith('p'):
-    pPr = p_before_t1.find(f'{{{W_NS}}}pPr')
-    if pPr is None:
-        pPr = ET.Element(f'{{{W_NS}}}pPr')
-        p_before_t1.insert(0, pPr)
-    if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
-        pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+between_0_1 = [p for p in list(body)[t0_pos + 1 : t1_pos] if p.tag.endswith('p')]
 
-# Ensure no blank page after Table 1:
-# Find Table 1 in body, check paragraphs between Table 1 and Table 2
-t1_body_pos = list(body).index(t1)
-t2_body_pos = list(body).index(tables[2])
-between_p = [p for p in list(body)[t1_body_pos+1 : t2_body_pos] if p.tag.endswith('p')]
-print(f'Paragraphs between Table 1 and Table 2: {len(between_p)}')
+sectPr_1 = None
+for p in between_0_1:
+    s = p.find(f'.//{{{W_NS}}}sectPr')
+    if s is not None:
+        sectPr_1 = copy.deepcopy(s)
+        break
 
-# If there are multiple section breaks, collapse them to 1 clean next-page section break
-if len(between_p) > 1:
-    for p_extra in between_p[:-1]:
-        body.remove(p_extra)
-# Ensure the remaining paragraph has a clean next-page sectPr and explicit pageBreakBefore
-p_last_between = between_p[-1] if between_p else None
-if p_last_between is not None:
-    pPr = p_last_between.find(f'{{{W_NS}}}pPr')
-    if pPr is None:
-        pPr = ET.Element(f'{{{W_NS}}}pPr')
-        p_last_between.insert(0, pPr)
-    if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
-        pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
-    sectPr = p_last_between.find(f'.//{{{W_NS}}}sectPr')
-    if sectPr is not None:
-        type_elem = sectPr.find(f'{{{W_NS}}}type')
-        if type_elem is not None:
-            sectPr.remove(type_elem)
+if sectPr_1 is not None:
+    type_elem = sectPr_1.find(f'{{{W_NS}}}type')
+    if type_elem is not None:
+        sectPr_1.remove(type_elem)
+
+for p in between_0_1:
+    body.remove(p)
+
+tiny_p_1 = make_tiny_p(sectPr=sectPr_1)
+t0_new_pos = list(body).index(tables[0])
+body.insert(t0_new_pos + 1, tiny_p_1)
+
+# Sambungan Lembar 2 -> 3:
+# Sisakan SATU paragraf tiny pembawa sectPr setelah Table 1, TANPA pageBreakBefore.
+# Section berikutnya dibuat nextPage (hapus w:type continuous dari sectPr final body).
+t1_pos = list(body).index(t1)
+t2_pos = list(body).index(tables[2])
+between_1_2 = [p for p in list(body)[t1_pos + 1 : t2_pos] if p.tag.endswith('p')]
+
+sectPr_2 = None
+for p in between_1_2:
+    s = p.find(f'.//{{{W_NS}}}sectPr')
+    if s is not None:
+        pgMar = s.find(f'{{{W_NS}}}pgMar')
+        if pgMar is not None and pgMar.attrib.get(f'{{{W_NS}}}top') == '480':
+            sectPr_2 = copy.deepcopy(s)
+            break
+        elif sectPr_2 is None:
+            sectPr_2 = copy.deepcopy(s)
+
+if sectPr_2 is not None:
+    type_elem = sectPr_2.find(f'{{{W_NS}}}type')
+    if type_elem is not None:
+        sectPr_2.remove(type_elem)
+
+for p in between_1_2:
+    body.remove(p)
+
+tiny_p_2 = make_tiny_p(sectPr=sectPr_2)
+t1_new_pos = list(body).index(t1)
+body.insert(t1_new_pos + 1, tiny_p_2)
+
+# Hapus w:type continuous dari sectPr final body agar Section Lembar 3 s/d akhir bertipe nextPage
+final_sectPr = body.find(f'{{{W_NS}}}sectPr')
+if final_sectPr is not None:
+    final_type = final_sectPr.find(f'{{{W_NS}}}type')
+    if final_type is not None:
+        final_sectPr.remove(final_type)
 
 # Table 2: Header Vendor Page 4
 t2 = tables[2]
@@ -662,33 +733,61 @@ for p in body.findall('.//w:p', {'w': W_NS}):
         t_date.text = '     {kota}, {tanggal_teks}'
         break
 
-# Halaman 4: Berita Acara Pemasangan Dynabolt (Page Break eksplisit agar Dynabolt di Sheet 4)
+# Sambungan Lembar 3 -> 4:
+# Hapus paragraf-paragraf kosong di antara tabel tanda tangan vendor (t5) dan judul Dynabolt,
+# sisakan SATU paragraf tiny. Biarkan pageBreakBefore HANYA di judul Dynabolt.
+t5_pos = list(body).index(t5)
+dyn_header_p = None
 for p in body.findall('.//w:p', {'w': W_NS}):
     txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
     if 'Pemasangan Dynabolt' in txt:
-        print('Found BA Dynabolt Header paragraph, inserting explicit pageBreakBefore...')
-        pPr = p.find(f'{{{W_NS}}}pPr')
-        if pPr is None:
-            pPr = ET.Element(f'{{{W_NS}}}pPr')
-            p.insert(0, pPr)
-        if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
-            pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+        dyn_header_p = p
         break
 
-# Halaman Foto BA Penghancuran HDD: Pastikan dimulai di halaman baru tersendiri (Page Break eksplisit agar HDD di Sheet 5)
+if dyn_header_p is not None:
+    dyn_pos = list(body).index(dyn_header_p)
+    between_5_dyn = [p for p in list(body)[t5_pos + 1 : dyn_pos] if p.tag.endswith('p')]
+    print(f'Paragraphs between Table 5 and Dynabolt header: {len(between_5_dyn)}')
+    for p in between_5_dyn:
+        body.remove(p)
+    tiny_p_3 = make_tiny_p()
+    t5_new_pos = list(body).index(t5)
+    body.insert(t5_new_pos + 1, tiny_p_3)
+    pPr = dyn_header_p.find(f'{{{W_NS}}}pPr')
+    if pPr is None:
+        pPr = ET.Element(f'{{{W_NS}}}pPr')
+        dyn_header_p.insert(0, pPr)
+    if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
+        pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+
+# Sambungan Lembar 4 -> 5:
+# Hapus paragraf-paragraf kosong di antara tabel tanda tangan dynabolt (t9) dan judul HDD,
+# sisakan SATU paragraf tiny. Biarkan pageBreakBefore HANYA di judul HDD.
+t9_pos = list(body).index(t9)
+hdd_header_p = None
 for p in body.findall('.//w:p', {'w': W_NS}):
     txt = ''.join([t.text for t in p.findall('.//w:t', {'w': W_NS}) if t.text]).strip()
     if 'Penghancuran Hard Disk' in txt:
-        print('Found BA HDD Header paragraph, inserting explicit pageBreakBefore...')
-        pPr = p.find(f'{{{W_NS}}}pPr')
-        if pPr is None:
-            pPr = ET.Element(f'{{{W_NS}}}pPr')
-            p.insert(0, pPr)
-        if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
-            pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+        hdd_header_p = p
         break
 
-# Map ba_hdd_full on Page 6
+if hdd_header_p is not None:
+    hdd_pos = list(body).index(hdd_header_p)
+    between_9_hdd = [p for p in list(body)[t9_pos + 1 : hdd_pos] if p.tag.endswith('p')]
+    print(f'Paragraphs between Table 9 and HDD header: {len(between_9_hdd)}')
+    for p in between_9_hdd:
+        body.remove(p)
+    tiny_p_4 = make_tiny_p()
+    t9_new_pos = list(body).index(t9)
+    body.insert(t9_new_pos + 1, tiny_p_4)
+    pPr = hdd_header_p.find(f'{{{W_NS}}}pPr')
+    if pPr is None:
+        pPr = ET.Element(f'{{{W_NS}}}pPr')
+        hdd_header_p.insert(0, pPr)
+    if pPr.find(f'{{{W_NS}}}pageBreakBefore') is None:
+        pPr.append(ET.Element(f'{{{W_NS}}}pageBreakBefore'))
+
+# Map ba_hdd_full on Lembar 5
 WP_NS = NAMESPACES['wp']
 mapped_ba_hdd_full = False
 for p in doc_root.iterfind('.//w:p', {'w': W_NS}):
@@ -706,8 +805,31 @@ for p in doc_root.iterfind('.//w:p', {'w': W_NS}):
                     t = ET.SubElement(r_el, f'{{{W_NS}}}t')
                     t.text = '{%foto_ba_hdd_full}'
                     mapped_ba_hdd_full = True
-                    print('ba_hdd_full successfully mapped on Page 6!')
+                    print('ba_hdd_full successfully mapped on Page 5!')
                     break
+
+# Akhir Dokumen (Lembar 5): hapus paragraf kosong setelah foto ba_hdd_full
+hdd_full_p = None
+for p in body.findall('.//w:p', {'w': W_NS}):
+    for t in p.findall('.//w:t', {'w': W_NS}):
+        if t.text and '{%foto_ba_hdd_full}' in t.text:
+            hdd_full_p = p
+            break
+    if hdd_full_p is not None:
+        break
+
+if hdd_full_p is not None:
+    full_p_pos = list(body).index(hdd_full_p)
+    after_hdd = [el for el in list(body)[full_p_pos + 1:] if el.tag.endswith('p')]
+    print(f'Removing {len(after_hdd)} empty paragraphs after foto_ba_hdd_full...')
+    for p in after_hdd:
+        body.remove(p)
+
+# Bersihkan semua lastRenderedPageBreak dari dokumen
+for parent in doc_root.iter():
+    for child in list(parent):
+        if child.tag == f'{{{W_NS}}}lastRenderedPageBreak':
+            parent.remove(child)
 
 # Serialize document.xml
 xml_bytes = ET.tostring(doc_root, encoding='utf-8', xml_declaration=True)

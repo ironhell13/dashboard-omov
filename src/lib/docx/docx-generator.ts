@@ -110,7 +110,23 @@ export async function generateDocx(
 
   doc.render(fullData);
 
-  const outputBuf = doc.getZip().generate({
+  // Pastikan seluruh wp:docPr memiliki id unik di seluruh dokumen (OOXML Compliance)
+  // Menghilangkan duplikasi id="2" bawaan docxtemplater-image-module-free agar dokumen Word
+  // tidak dianggap 'unreadable content' / corrupt oleh Microsoft Word.
+  const zipObj = doc.getZip();
+  let docXml = zipObj.file('word/document.xml')?.asText();
+  if (docXml) {
+    let docPrCounter = 100;
+    docXml = docXml.replace(/<wp:docPr\b([^>]*)>/g, (_match, attrs) => {
+      docPrCounter++;
+      let newAttrs = attrs.replace(/\bid="[^"]*"/, `id="${docPrCounter}"`);
+      newAttrs = newAttrs.replace(/\bname="Image 2"/, `name="Image ${docPrCounter}"`);
+      return `<wp:docPr${newAttrs}>`;
+    });
+    zipObj.file('word/document.xml', docXml);
+  }
+
+  const outputBuf = zipObj.generate({
     type: 'nodebuffer',
     compression: 'DEFLATE',
   });
